@@ -6,15 +6,13 @@ import (
 	"syscall"
 )
 
-func runCmds(cmdStrs []string) int {
-	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
-	jobsCompleted := make(chan job, len(cmdStrs))
-
-	numOfRunners := *parallelism
-	if numOfRunners == 0 {
+func runCmds(cmdStrs []string, numOfRunners int) int {
+	if numOfRunners == 0 { // default to
 		numOfRunners = len(cmdStrs)
 	}
 
+	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
+	jobsCompleted := make(chan job, len(cmdStrs))
 	for n := 1; n <= numOfRunners; n++ { // start runners
 		go jobRunner(jobsToRun, jobsCompleted)
 	}

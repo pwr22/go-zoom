@@ -6,5 +6,5 @@ import (
 
 func main() {
 	parseArgs()
-	os.Exit(runCmds(getCmdStrings()))
+	os.Exit(runCmds(getCmdStrings(), *parallelism))
 }
