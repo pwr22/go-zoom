@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os/exec"
+	"syscall"
 )
 
 func runCmds(cmdStrs []string) int {
@@ -43,10 +45,16 @@ func runCmds(cmdStrs []string) int {
 				fmt.Println("got an error so stopping all commands - further errors will be ignored")
 				fmt.Printf("error: %v\n", job.err)
 
-				exitStatus = 1
+				if exitErr, ok := job.err.(*exec.ExitError); ok { // propagate exit status if we can
+					exitStatus = exitErr.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() // might need to be made platform specific
+				} else { // we don't have a status so just use a generic error
+					exitStatus = 1
+				}
+
 				for _, job := range jobs {
 					job.stop()
 				}
+
 				erroring = true
 			}
 		}
