@@ -10,21 +10,13 @@ func runCmds(cmdStrs []string) int {
 	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
 	jobsCompleted := make(chan job, len(cmdStrs))
 
-	cmdRunner := func() {
-		for job := range jobsToRun {
-			out, err := job.cmd.CombinedOutput()
-			job.out, job.err = string(out), err
-			jobsCompleted <- job
-		}
-	}
-
 	numOfRunners := *parallelism
 	if numOfRunners == 0 {
 		numOfRunners = len(cmdStrs)
 	}
 
 	for n := 1; n <= numOfRunners; n++ { // start runners
-		go cmdRunner()
+		go jobRunner(jobsToRun, jobsCompleted)
 	}
 
 	jobs := make([]job, len(cmdStrs))
