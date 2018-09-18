@@ -7,16 +7,18 @@ import (
 )
 
 func runCmds(cmdStrs []string, numOfRunners int) int {
-	if numOfRunners == 0 { // default to
+	if numOfRunners == 0 { // default to running all commands at once
 		numOfRunners = len(cmdStrs)
 	}
 
+	// start runners
 	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
 	jobsCompleted := make(chan job, len(cmdStrs))
-	for n := 1; n <= numOfRunners; n++ { // start runners
+	for n := 1; n <= numOfRunners; n++ {
 		go jobRunner(jobsToRun, jobsCompleted)
 	}
 
+	// send out the work
 	jobs := make([]job, len(cmdStrs))
 	for idx, cmdStr := range cmdStrs { // send the work
 		job := createJob(cmdStr)
@@ -25,10 +27,11 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 	}
 	close(jobsToRun) // everything is queued up - this signals to runners when they should finish up
 
+	// receiving loop - waiting for jobs to come back from the runners
 	doneCount, erroring, exitStatus := 0, false, 0
 	for doneCount < len(cmdStrs) {
 		job := <-jobsCompleted
-		fmt.Print(job.out)
+		fmt.Print(job.out) // print out the output we got in all cases - success or failure
 
 		if job.err != nil {
 			if !erroring { // kill other processes after first error - then ignore the cascade - we only care about the first error
@@ -41,6 +44,7 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 					exitStatus = 1
 				}
 
+				// stop all the running jobs
 				for _, job := range jobs {
 					job.stop()
 				}
