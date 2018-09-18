@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"syscall"
 )
@@ -37,6 +38,6 @@ func sendCtrlBreak(pid int) {
 
 	res, _, err := proc.Call(syscall.CTRL_BREAK_EVENT, uintptr(pid))
 	if res == 0 { // this seems to happen if the process is already dead so we can ignore it
-		fmt.Fprintln(err)
+		fmt.Fprintln(os.Stderr, err)
 	}
 }
