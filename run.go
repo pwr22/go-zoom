@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"os/signal"
 	"syscall"
 )
 
@@ -16,8 +18,9 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 	// start runners
 	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
 	jobsCompleted := make(chan job, len(cmdStrs))
+	jobsErrored := make(chan job, len(cmdStrs))
 	for n := 1; n <= numOfRunners; n++ {
-		go jobRunner(jobsToRun, jobsCompleted)
+		go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
 	}
 
 	// send out initial jobs
@@ -34,14 +37,34 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 		close(jobsToRun)
 	}
 
-	// receiving loop - waiting for jobs to come back from the runners
-	doneCount, erroring, exitStatus := 0, false, 0
-	for doneCount < len(cmdStrs) {
-		job := <-jobsCompleted
-		fmt.Print(job.out) // print out the output we got in all cases - success or failure
+	stopEarlySignals := make(chan os.Signal)
+	signal.Notify(stopEarlySignals, syscall.SIGINT, syscall.SIGTERM)
 
-		if job.err != nil {
-			if !erroring { // kill other processes after first error - then ignore the cascade - we only care about the first error
+	// receiving loop - waiting for jobs to come back from the runners
+	doneCount, stoppingEarly, exitStatus := 0, false, 0
+	for doneCount < len(cmdStrs) {
+		select {
+		case job := <-jobsCompleted:
+			fmt.Print(job.out) // print out the output we got in all cases - success or failure
+
+			if !stoppingEarly && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
+				nextJob := createJob(cmdStrs[nextJobIdx])
+				jobs[nextJobIdx] = nextJob
+				jobsToRun <- nextJob
+				nextJobIdx++
+
+				// if there are no commands left then let the runners know
+				if nextJobIdx == len(cmdStrs) {
+					close(jobsToRun)
+				}
+			}
+
+			doneCount++
+
+		case job := <-jobsErrored:
+			fmt.Print(job.out) // print out the output we got in all cases - success or failure
+
+			if !stoppingEarly { // kill other processes after first error - then ignore the cascade - we only care about the first error
 				fmt.Println("got an error so stopping all commands - further errors will be ignored")
 				fmt.Printf("error: %v\n", job.err)
 
@@ -56,25 +79,33 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 					job.stop()
 				}
 
-				erroring = true                        // make sure we don't come back into this branch
+				stoppingEarly = true                   // make sure we don't come back into this branch
 				doneCount += len(cmdStrs) - nextJobIdx // skip the jobs we aren't going to start
 				if numOfRunners != len(cmdStrs) {      // safely handle the case where number of runners == number of jobs
 					close(jobsToRun) // there will be no more work
 				}
 			}
-		} else if !erroring && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
-			job := createJob(cmdStrs[nextJobIdx])
-			jobs[nextJobIdx] = job
-			jobsToRun <- job
-			nextJobIdx++
 
-			// if there are no commands left then let the runners know
-			if nextJobIdx == len(cmdStrs) {
-				close(jobsToRun)
+			doneCount++
+
+		case <-stopEarlySignals:
+			if !stoppingEarly { // kill other processes after first error - then ignore the cascade - we only care about the first error
+				fmt.Println("got a signal so stopping all commands")
+
+				exitStatus = 1
+
+				// stop all the running jobs
+				for _, job := range jobs {
+					job.stop()
+				}
+
+				stoppingEarly = true                   // make sure we don't come back into this branch
+				doneCount += len(cmdStrs) - nextJobIdx // skip the jobs we aren't going to start
+				if numOfRunners != len(cmdStrs) {      // safely handle the case where number of runners == number of jobs
+					close(jobsToRun) // there will be no more work
+				}
 			}
 		}
-
-		doneCount++
 	}
 
 	return exitStatus
