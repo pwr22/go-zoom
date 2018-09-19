@@ -19,7 +19,7 @@ func createJob(cmdStr string) job {
 
 // stop a running job - no op if not running yet or already dead
 func (job job) stop() {
-	if job.cmd.Process != nil { // we can only do this if the process exists
+	if job.cmd != nil && job.cmd.Process != nil { // we can only do this if the command and process exists
 		sendCtrlBreak(job.cmd.Process.Pid) // this goes to the whole process group and can only be sent within the same console
 	}
 }
