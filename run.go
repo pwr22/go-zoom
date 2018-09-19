@@ -6,39 +6,39 @@ import (
 	"syscall"
 )
 
-func runCmds(cmdStrs []string) int {
-	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
-	jobsCompleted := make(chan job, len(cmdStrs))
-
-	cmdRunner := func() {
-		for job := range jobsToRun {
-			out, err := job.cmd.CombinedOutput()
-			job.out, job.err = string(out), err
-			jobsCompleted <- job
-		}
-	}
-
-	numOfRunners := *parallelism
-	if numOfRunners == 0 {
+func runCmds(cmdStrs []string, numOfRunners int) int {
+	if numOfRunners == 0 { // default to running all commands at once
+		numOfRunners = len(cmdStrs)
+	} else if numOfRunners > len(cmdStrs) { // or if there are more runners and commands then drop the excess
 		numOfRunners = len(cmdStrs)
 	}
 
-	for n := 1; n <= numOfRunners; n++ { // start runners
-		go cmdRunner()
+	// start runners
+	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
+	jobsCompleted := make(chan job, len(cmdStrs))
+	for n := 1; n <= numOfRunners; n++ {
+		go jobRunner(jobsToRun, jobsCompleted)
 	}
 
+	// send out initial jobs
 	jobs := make([]job, len(cmdStrs))
-	for idx, cmdStr := range cmdStrs { // send the work
-		job := createJob(cmdStr)
+	for idx := 0; idx < numOfRunners; idx++ {
+		job := createJob(cmdStrs[idx])
 		jobs[idx] = job
 		jobsToRun <- job
 	}
-	close(jobsToRun) // everything is queued up - this signals to runners when they should finish up
+	nextJobIdx := numOfRunners
 
+	// if this is all the jobs then let the runners know before we even start collecting jobs
+	if nextJobIdx == len(cmdStrs) {
+		close(jobsToRun)
+	}
+
+	// receiving loop - waiting for jobs to come back from the runners
 	doneCount, erroring, exitStatus := 0, false, 0
 	for doneCount < len(cmdStrs) {
 		job := <-jobsCompleted
-		fmt.Print(job.out)
+		fmt.Print(job.out) // print out the output we got in all cases - success or failure
 
 		if job.err != nil {
 			if !erroring { // kill other processes after first error - then ignore the cascade - we only care about the first error
@@ -51,11 +51,24 @@ func runCmds(cmdStrs []string) int {
 					exitStatus = 1
 				}
 
+				// stop all the running jobs
 				for _, job := range jobs {
 					job.stop()
 				}
 
 				erroring = true
+				doneCount += len(cmdStrs) - nextJobIdx // skip the jobs we aren't going to start
+				close(jobsToRun)
+			}
+		} else if !erroring && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
+			job := createJob(cmdStrs[nextJobIdx])
+			jobs[nextJobIdx] = job
+			jobsToRun <- job
+			nextJobIdx++
+
+			// if there are no commands left then let the runners know
+			if nextJobIdx == len(cmdStrs) {
+				close(jobsToRun)
 			}
 		}
 
