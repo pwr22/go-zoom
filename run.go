@@ -9,6 +9,8 @@ import (
 func runCmds(cmdStrs []string, numOfRunners int) int {
 	if numOfRunners == 0 { // default to running all commands at once
 		numOfRunners = len(cmdStrs)
+	} else if numOfRunners > len(cmdStrs) { // or if there are more runners and commands then drop the excess
+		numOfRunners = len(cmdStrs)
 	}
 
 	// start runners
@@ -18,14 +20,19 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 		go jobRunner(jobsToRun, jobsCompleted)
 	}
 
-	// send out the work
+	// send out initial jobs
 	jobs := make([]job, len(cmdStrs))
-	for idx, cmdStr := range cmdStrs { // send the work
-		job := createJob(cmdStr)
+	for idx := 0; idx < numOfRunners; idx++ {
+		job := createJob(cmdStrs[idx])
 		jobs[idx] = job
 		jobsToRun <- job
 	}
-	close(jobsToRun) // everything is queued up - this signals to runners when they should finish up
+	nextJobIdx := numOfRunners
+
+	// if this is all the jobs then let the runners know before we even start collecting jobs
+	if nextJobIdx == len(cmdStrs) {
+		close(jobsToRun)
+	}
 
 	// receiving loop - waiting for jobs to come back from the runners
 	doneCount, erroring, exitStatus := 0, false, 0
@@ -50,6 +57,18 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 				}
 
 				erroring = true
+				doneCount += len(cmdStrs) - nextJobIdx // skip the jobs we aren't going to start
+				close(jobsToRun)
+			}
+		} else if !erroring && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
+			job := createJob(cmdStrs[nextJobIdx])
+			jobs[nextJobIdx] = job
+			jobsToRun <- job
+			nextJobIdx++
+
+			// if there are no commands left then let the runners know
+			if nextJobIdx == len(cmdStrs) {
+				close(jobsToRun)
 			}
 		}
 
