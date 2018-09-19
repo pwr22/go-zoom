@@ -30,7 +30,7 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 	nextJobIdx := numOfRunners
 
 	// if this is all the jobs then let the runners know before we even start collecting jobs
-	if nextJobIdx == len(cmdStrs) {
+	if numOfRunners == len(cmdStrs) {
 		close(jobsToRun)
 	}
 
@@ -56,9 +56,11 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 					job.stop()
 				}
 
-				erroring = true
+				erroring = true                        // make sure we don't come back into this branch
 				doneCount += len(cmdStrs) - nextJobIdx // skip the jobs we aren't going to start
-				close(jobsToRun)
+				if numOfRunners != len(cmdStrs) {      // safely handle the case where number of runners == number of jobs
+					close(jobsToRun) // there will be no more work
+				}
 			}
 		} else if !erroring && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
 			job := createJob(cmdStrs[nextJobIdx])
