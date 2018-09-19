@@ -7,10 +7,12 @@ import (
 	"syscall"
 )
 
+var shell = os.Getenv("COMSPEC")
+
 // create a job to run a command
 func createJob(cmdStr string) job {
-	cmd := exec.Command("cmd")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
+	cmd := exec.Command(shell)
+	cmd.SysProcAttr = &syscall.SysProcAttr{ // assume the shell take s command like so
 		CmdLine:       fmt.Sprintf(`/C "%s"`, cmdStr),   // got to do weird things for the quoting to work right
 		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP, // signals go to the whole group so we gotta make a new one
 	}

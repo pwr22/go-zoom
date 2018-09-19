@@ -1,13 +1,16 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"syscall"
 )
 
+var shell = os.Getenv("SHELL")
+
 // create a job to run a command
 func createJob(cmdStr string) job {
-	cmd := exec.Command("sh", "-c", cmdStr)
+	cmd := exec.Command(shell, "-c", cmdStr)              // assume the shell takes a command like this
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true} // create a new process group
 	return job{cmd: cmd}
 }
