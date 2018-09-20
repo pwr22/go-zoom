@@ -1,0 +1,7 @@
+os:
+  - linux
+  - osx
+language: go
+go:
+  - "1.10"
+  - "1.11"
