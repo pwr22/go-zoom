@@ -28,10 +28,6 @@ func TestCreateJob(t *testing.T) {
 	}
 }
 
-func TestStopNilJob(t *testing.T) {
-	job{}.stop()
-}
-
 func TestStopUnstartedJob(t *testing.T) {
 	createJob("sleep 0.1").stop()
 }
