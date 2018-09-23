@@ -6,7 +6,22 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+
+	"github.com/pwr22/zoom/job"
 )
+
+// a routine to run jobs from a channel until it closes
+func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
+	for job := range jobsIn {
+		out, err := job.Cmd.CombinedOutput()
+		job.Out, job.Err = string(out), err
+		if err != nil {
+			jobsErrored <- job
+		} else {
+			jobsFinished <- job
+		}
+	}
+}
 
 func runCmds(cmdStrs []string, numOfRunners int) int {
 	if numOfRunners == 0 { // default to running all commands at once
@@ -16,17 +31,17 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 	}
 
 	// start runners
-	jobsToRun := make(chan job, len(cmdStrs)) // enough to buffer all commands
-	jobsCompleted := make(chan job, len(cmdStrs))
-	jobsErrored := make(chan job, len(cmdStrs))
+	jobsToRun := make(chan *job.Job, len(cmdStrs)) // enough to buffer all commands
+	jobsCompleted := make(chan *job.Job, len(cmdStrs))
+	jobsErrored := make(chan *job.Job, len(cmdStrs))
 	for n := 1; n <= numOfRunners; n++ {
 		go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
 	}
 
 	// send out initial jobs
-	jobs := make([]job, len(cmdStrs))
+	jobs := make([]*job.Job, len(cmdStrs))
 	for idx := 0; idx < numOfRunners; idx++ {
-		job := createJob(cmdStrs[idx])
+		job := job.Create(cmdStrs[idx])
 		jobs[idx] = job
 		jobsToRun <- job
 	}
@@ -44,11 +59,11 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 	doneCount, stoppingEarly, exitStatus := 0, false, 0
 	for doneCount < len(cmdStrs) {
 		select {
-		case job := <-jobsCompleted:
-			fmt.Print(job.out) // print out the output we got in all cases - success or failure
+		case finishedJob := <-jobsCompleted:
+			fmt.Print(finishedJob.Out) // print out the output we got in all cases - success or failure
 
 			if !stoppingEarly && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
-				nextJob := createJob(cmdStrs[nextJobIdx])
+				nextJob := job.Create(cmdStrs[nextJobIdx])
 				jobs[nextJobIdx] = nextJob
 				jobsToRun <- nextJob
 				nextJobIdx++
@@ -61,22 +76,22 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 
 			doneCount++
 
-		case job := <-jobsErrored:
-			fmt.Print(job.out) // print out the output we got in all cases - success or failure
+		case erroredJob := <-jobsErrored:
+			fmt.Print(erroredJob.Out) // print out the output we got in all cases - success or failure
 
 			if !stoppingEarly { // kill other processes after first error - then ignore the cascade - we only care about the first error
 				fmt.Println("got an error so stopping all commands - further errors will be ignored")
-				fmt.Printf("error: %v\n", job.err)
+				fmt.Printf("error: %v\n", erroredJob.Err)
 
-				if exitErr, ok := job.err.(*exec.ExitError); ok { // propagate exit status if we can
+				if exitErr, ok := erroredJob.Err.(*exec.ExitError); ok { // propagate exit status if we can
 					exitStatus = exitErr.ProcessState.Sys().(syscall.WaitStatus).ExitStatus() // might need to be made platform specific
 				} else { // we don't have a status so just use a generic error
 					exitStatus = 1
 				}
 
 				// stop all the running jobs
-				for _, job := range jobs {
-					job.stop()
+				for _, j := range jobs {
+					j.Stop()
 				}
 
 				stoppingEarly = true                   // make sure we don't come back into this branch
@@ -95,8 +110,8 @@ func runCmds(cmdStrs []string, numOfRunners int) int {
 				exitStatus = 1
 
 				// stop all the running jobs
-				for _, job := range jobs {
-					job.stop()
+				for _, j := range jobs {
+					j.Stop()
 				}
 
 				stoppingEarly = true                   // make sure we don't come back into this branch
