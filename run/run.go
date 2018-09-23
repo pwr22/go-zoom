@@ -1,4 +1,4 @@
-package main
+package run
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/pwr22/zoom/job"
 )
 
-// a routine to run jobs from a channel until it closes
+// jobRunner is a routine to run jobs from a channel until it closes
 func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
 	for job := range jobsIn {
 		out, err := job.Cmd.CombinedOutput()
@@ -23,7 +23,8 @@ func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
 	}
 }
 
-func runCmds(cmdStrs []string, numOfRunners int) int {
+// Cmds executes the commands its given in parallel
+func Cmds(cmdStrs []string, numOfRunners int) int {
 	if numOfRunners == 0 { // default to running all commands at once
 		numOfRunners = len(cmdStrs)
 	} else if numOfRunners > len(cmdStrs) { // or if there are more runners and commands then drop the excess
