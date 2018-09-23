@@ -1,4 +1,4 @@
-package main
+package job
 
 import (
 	"fmt"
@@ -9,20 +9,20 @@ import (
 
 var shell = os.Getenv("COMSPEC")
 
-// create a job to run a command
-func createJob(cmdStr string) job {
+// Create a job to run a command
+func Create(cmdStr string) *Job {
 	cmd := exec.Command(shell)
 	cmd.SysProcAttr = &syscall.SysProcAttr{ // assume the shell take s command like so
 		CmdLine:       fmt.Sprintf(`/C "%s"`, cmdStr),   // got to do weird things for the quoting to work right
 		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP, // signals go to the whole group so we gotta make a new one
 	}
-	return job{cmd: cmd}
+	return &Job{Cmd: cmd}
 }
 
 // stop a running job - no op if not running yet or already dead
-func (job job) stop() {
-	if job.cmd != nil && job.cmd.Process != nil { // we can only do this if the command and process exists
-		sendCtrlBreak(job.cmd.Process.Pid) // this goes to the whole process group and can only be sent within the same console
+func (job *Job) Stop() {
+	if job != nil && job.Cmd != nil && job.Cmd.Process != nil { // we can only do this if a process exists
+		sendCtrlBreak(job.Cmd.Process.Pid) // this goes to the whole process group and can only be sent within the same console
 	}
 }
 
