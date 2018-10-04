@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 )
 
-var parallelism = flag.Int("parallelism", 0, "how many commands to run at a time")
+// a sensible default is to use the number of CPUs available
+var parallelism = flag.Int("parallelism", runtime.NumCPU(), "how many commands to run at a time")
 
 // parse flags and commandline args
 func parseArgs() {

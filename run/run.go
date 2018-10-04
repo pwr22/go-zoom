@@ -25,7 +25,7 @@ func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
 
 // Cmds executes the commands its given in parallel
 func Cmds(cmdStrs []string, numOfRunners int) int {
-	if numOfRunners == 0 { // default to running all commands at once
+	if numOfRunners == 0 { // means run everything at once
 		numOfRunners = len(cmdStrs)
 	} else if numOfRunners > len(cmdStrs) { // or if there are more runners and commands then drop the excess
 		numOfRunners = len(cmdStrs)
