@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 	"runtime"
+
+	flag "github.com/spf13/pflag"
 )
 
 // a sensible default is to use the number of CPUs available
