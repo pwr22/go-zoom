@@ -10,14 +10,14 @@ import (
 )
 
 // a sensible default is to use the number of CPUs available
-var parallelism = flag.Int("parallelism", runtime.NumCPU(), "how many commands to run at a time")
+var parallelism = flag.IntP("jobs", "j", runtime.NumCPU(), "number of jobs to run at once or 0 for as many as possible")
 
 // parse flags and commandline args
 func parseArgs() {
 	flag.Parse()
 
 	if len(flag.Args()) != 1 {
-		fmt.Fprintln(os.Stderr, "expecting a single argument - the path of the file of commands to run")
+		fmt.Fprintln(os.Stderr, "expecting a single argument - the file of jobs to run")
 		os.Exit(2)
 	}
 }
