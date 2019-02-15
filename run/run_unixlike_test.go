@@ -13,7 +13,7 @@ import (
 // TODO test output returned
 func TestJobRunner(t *testing.T) {
 	// we'll run two commands, one will succeed and one will be stopped to simulate error
-	job1, job2 := job.Create("sleep 0.1"), job.Create("sleep 1")
+	job1, job2 := job.Create(0, "sleep 0.1"), job.Create(1, "sleep 1")
 	jobsToRun, jobsCompleted, jobsErrored := make(chan *job.Job, 1), make(chan *job.Job, 1), make(chan *job.Job, 1)
 
 	go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
