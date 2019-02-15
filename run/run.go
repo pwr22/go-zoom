@@ -42,7 +42,7 @@ func Cmds(cmdStrs []string, numOfRunners int) int {
 	// send out initial jobs
 	jobs := make([]*job.Job, len(cmdStrs))
 	for idx := 0; idx < numOfRunners; idx++ {
-		job := job.Create(cmdStrs[idx])
+		job := job.Create(idx, cmdStrs[idx])
 		jobs[idx] = job
 		jobsToRun <- job
 	}
