@@ -10,9 +10,8 @@ import (
 )
 
 var printVersion = flag.BoolP("version", "V", false, "print version information")
-
-// a sensible default is to use the number of CPUs available
 var parallelism = flag.IntP("jobs", "j", runtime.NumCPU(), "number of jobs to run at once or 0 for as many as possible")
+var keepOrder = flag.BoolP("keep-order", "k", false, "print output in the order jobs were run instead of the order they finish")
 
 // parse flags and commandline args
 func parseArgs() {

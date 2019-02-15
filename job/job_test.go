@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	job := Create(sleep)
+	job := Create(42, sleep)
 
 	if job.Err != nil {
 		t.Fatal("err is not set to nil")
@@ -14,6 +14,10 @@ func TestCreate(t *testing.T) {
 
 	if job.Out != "" {
 		t.Fatal("out is not empty")
+	}
+
+	if job.Num != 42 {
+		t.Fatal("Num is not set")
 	}
 
 	testSysProcAttr(t, job)
@@ -29,11 +33,11 @@ func TestStopNil(t *testing.T) {
 }
 
 func TestStopUnstarted(t *testing.T) {
-	Create(sleep).Stop()
+	Create(42, sleep).Stop()
 }
 
 func TestStopStarted(t *testing.T) {
-	job := Create(sleep)
+	job := Create(42, sleep)
 
 	start := time.Now()
 	if err := job.Cmd.Start(); err != nil {
