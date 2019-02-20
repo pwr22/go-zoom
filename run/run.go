@@ -23,6 +23,23 @@ func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
 	}
 }
 
+func printJobs(lastJobPrinted int, finishedJob *job.Job, jobsToPrint []*job.Job, keepOrder bool) {
+	if keepOrder {
+		jobsToPrint[finishedJob.Num] = finishedJob
+
+		// if we've just finished the next job to print
+		if lastJobPrinted == finishedJob.Num-1 {
+			// print jobs till we hit the end or are waiting on a job
+			for idx := finishedJob.Num; idx < len(jobsToPrint) && jobsToPrint[idx] != nil; idx++ {
+				fmt.Print(jobsToPrint[idx].Out)
+				jobsToPrint[idx] = nil
+			}
+		}
+	} else { // output immediately
+		fmt.Print(finishedJob.Out)
+	}
+}
+
 // Cmds executes the commands its given in parallel
 func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) int {
 	if numOfRunners == 0 { // means run everything at once
@@ -63,20 +80,7 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) int {
 	for doneCount < len(cmdStrs) {
 		select {
 		case finishedJob := <-jobsCompleted:
-			if keepOrder {
-				jobsToPrint[finishedJob.Num] = finishedJob
-
-				// if we've just finished the next job to print
-				if lastJobPrinted == finishedJob.Num-1 {
-					// print jobs till we hit the end or are waiting on a job
-					for idx := finishedJob.Num; idx < len(jobsToPrint) && jobsToPrint[idx] != nil; idx++ {
-						fmt.Print(jobsToPrint[idx].Out)
-						jobsToPrint[idx] = nil
-					}
-				}
-			} else { // output immediately
-				fmt.Print(finishedJob.Out)
-			}
+			printJobs(lastJobPrinted, finishedJob, jobsToPrint, keepOrder)
 
 			if !stoppingEarly && nextJobIdx < len(cmdStrs) { // start any remaining jobs if things are still going smoothly
 				nextJob := job.Create(nextJobIdx, cmdStrs[nextJobIdx])
@@ -93,20 +97,7 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) int {
 			doneCount++
 
 		case erroredJob := <-jobsErrored:
-			if keepOrder {
-				jobsToPrint[erroredJob.Num] = erroredJob
-
-				// if we've just finished the next job to print
-				if lastJobPrinted == erroredJob.Num-1 {
-					// print jobs till we hit the end or are waiting on a job
-					for idx := erroredJob.Num; idx < len(jobsToPrint) && jobsToPrint[idx] != nil; idx++ {
-						fmt.Print(jobsToPrint[idx].Out)
-						jobsToPrint[idx] = nil
-					}
-				}
-			} else {
-				fmt.Print(erroredJob.Out)
-			}
+			printJobs(lastJobPrinted, erroredJob, jobsToPrint, keepOrder)
 
 			if !stoppingEarly { // kill other processes after first error - then ignore the cascade - we only care about the first error
 				fmt.Println("got an error so stopping all commands - further errors will be ignored")
