@@ -9,14 +9,29 @@ Parallel command executor with a focus on simplicity and good cross-platform beh
 
 ## Usage
 
-    zoom <file_containing_commands>
+    cat args.txt | zoom [optional command] 
 
-The file should contain a list of commands to be executed, one per line. For example
+The file can be arguments for the command, or if none was given, full commands. In either case it's one per line
+
+An example with arguments
+
+    $ cat args.txt
+
+    8.8.8.8
+    8.8.4.4
+
+    $ cat args.txt | zoom ping
+
+An example with commands
+
+    $ cat commands.txt
 
     ping 8.8.8.8
     ping 8.8.4.4
 
-`zoom` will spawn a `$SHELL` for each command so you can use things like `&&` and `||` 
+    $ cat commands.txt | zoom
+
+`zoom` will build jobs by taking each argument, prefixing it with the command if you gave one and then run those jobs for you in parallel. It will invoke a `$SHELL` for each command so you can use things like `&&`, `||` and other goodness 
 
 ## Installation
 

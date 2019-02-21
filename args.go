@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 
 	flag "github.com/spf13/pflag"
 )
@@ -21,31 +22,24 @@ func parseArgs() {
 		fmt.Println(version)
 		os.Exit(0)
 	}
-
-	if len(flag.Args()) != 1 {
-		fmt.Fprintln(os.Stderr, "expecting a single argument - the file of jobs to run")
-		os.Exit(2)
-	}
 }
 
 // read in commands to run
 func getCmdStrings() []string {
-	cmdsFilePath := flag.Arg(0)
-
-	cmdsFile, err := os.Open(cmdsFilePath)
-	if err != nil {
-		panic(err)
+	// get any command given as args
+	commandPrefix := ""
+	if len(flag.Args()) != 0 {
+		commandPrefix = strings.Join(flag.Args(), " ")
 	}
-	defer cmdsFile.Close()
 
 	// one command per line
-	scanner := bufio.NewScanner(cmdsFile)
+	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(bufio.ScanLines)
 
 	// slurp in all the lines
 	var lines []string
 	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+		lines = append(lines, strings.Join([]string{commandPrefix, scanner.Text()}, " ")) // prefix with any commands
 	}
 
 	return lines
