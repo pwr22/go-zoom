@@ -16,6 +16,7 @@ var keepOrder = flag.BoolP("keep-order", "k", false, "print output in the order 
 
 // parse flags and commandline args
 func parseArgs() {
+	flag.SetInterspersed(false) // don't confuse flags to the command with our own
 	flag.Parse()
 
 	if *printVersion {
