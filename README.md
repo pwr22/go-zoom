@@ -11,9 +11,16 @@ Parallel command executor with a focus on simplicity and good cross-platform beh
 ## Usage
 
     cat args.txt | zoom [optional command] 
-    zoom [optional command] ::: arguments
+    zoom [optional command] [::: arg1 arg2 arg3 ...] [:::: argfile1.txt argfile2.txt ...] ...
 
-Arguments can be read from either standard input or passed on the command line. They can be arguments for a command given on the command line or full commands themselves. In either case it's one per line
+There are two main modes of operation
+
+- Args from standard input
+- Args from command line and / or files (can still read from stdin by passing `-`)
+
+In either mode an optional command will be prepended to each argument provided. If there isn't a command then each argument is a full command itself
+
+For each of these zoom will invoke a `$SHELL` so you can use things like `&&`, `||` and other goodness. Watch out quote them properly if you pass them on the commandline but you shouldn't need to worry if loading them from a file 
 
 An example with arguments from standard input
 
@@ -41,7 +48,171 @@ An example with commands on the command line
 
     $ zoom ::: "ping -c1 8.8.8.8" "ping -c1 8.8.4.4"
 
-`zoom` will build jobs by taking each argument, prefixing it with the command if you gave one and then run those jobs for you in parallel. It will invoke a `$SHELL` for each command so you can use things like `&&`, `||` and other goodness 
+An example taking arguments from a file
+
+    $ cat args.txt
+
+    8.8.8.8
+    8.8.4.4
+
+    $ zoom ping -c1 :::: args.txt
+
+An example taking commands from a file
+
+    $ cat commands.txt
+
+    ping -c1 8.8.8.8
+    ping -c1 8.8.4.4
+
+    $ zoom :::: commands.txt
+
+`:::` and `::::` can be used multiple times and intermixed as needed. Each set of arguments will be permuted together when building commands to run so they can be used to replace loop functionality
+
+An example using `:::`
+
+    $ zoom echo ::: a b c ::: 1 2 3
+
+    a 3
+    a 2
+    a 1
+    b 1
+    b 2
+    b 3
+    c 2
+    c 1
+    c 3
+
+An example using `::::`
+
+    $ cat letters.txt
+
+    a
+    b
+    c
+
+    $ cat numbers.txt
+
+    1
+    2
+    3
+
+    $ zoom echo :::: letters.txt numbers.txt
+
+    a 2
+    a 3
+    b 1
+    a 1
+    b 2
+    c 1
+    b 3
+    c 2
+    c 3
+
+An example using both `:::` and `::::`
+
+    $ cat numbers.txt
+
+    1
+    2
+    3
+
+    $ zoom echo ::: a b c :::: numbers.txt
+
+    a 3
+    a 1
+    a 2
+    b 1
+    b 2
+    b 3
+    c 1
+    c 2
+    c 3
+
+The arguments given after `:::` are all taken as a single set to permute but `::::` gives each file a set of its own. That means these all permute
+
+    $ zoom echo ::: a b c ::: 1 2 3
+
+    a 2
+    a 3
+    b 1
+    a 1
+    b 2
+    c 1
+    c 2
+    b 3
+    c 3
+
+    $ cat letters.txt
+
+    a
+    b
+    c
+
+    $ cat numbers.txt
+
+    1
+    2
+    3
+
+    $ zoom echo :::: letters.txt numbers.txt
+
+    a 1
+    a 3
+    b 1
+    a 2
+    b 2
+    b 3
+    c 1
+    c 2
+    c 3
+
+    $ zoom echo :::: letters.txt :::: numbers.txt
+
+    a 1
+    a 2
+    a 3
+    b 1
+    b 2
+    b 3
+    c 1
+    c 2
+    c 3
+
+But this does not permute
+
+    $ zoom echo ::: a b c 1 2 3
+
+    a
+    b
+    2
+    3
+    1
+    c
+
+This behaviour is how [GNU Parallel](https://www.gnu.org/software/parallel/) behaves. [MIT/Rust Parallel](https://github.com/mmstick/parallel) implements `::::` differently in that it takes all arguments given in files and concatenates them into a single set like this
+
+    $ cat letters.txt 
+
+    a
+    b
+    c
+
+    $ cat numbers.txt 
+
+    1
+    2
+    3
+    
+    $ rust-parallel echo :::: letters.txt numbers.txt
+
+    a
+    b
+    c
+    1
+    2
+    3
+
+I find this to be more consistent across `:::` and `::::` so the zoom semantics may change before v1.0.0 to match this. If so I'll likely provide a flag for parallel compatibility
 
 ## Installation
 
