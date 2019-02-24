@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"strings"
@@ -106,26 +107,49 @@ func permuteCmdLineArgSets(sets [][]string) []string {
 	return cmds
 }
 
+// reads in commands from a file with "-" meaning std in
+func readCmdsFromFile(name string) []string {
+	var file io.Reader
+	if name == "-" {
+		file = os.Stdin
+	} else {
+		f, err := os.Open(name)
+		if err != nil {
+			panic(err)
+		}
+		file = f
+	}
+
+	// one command per line
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	// slurp in all the lines
+	var cmds []string
+	for scanner.Scan() {
+		cmds = append(cmds, scanner.Text())
+	}
+
+	return cmds
+}
+
 // read in commands to run
 func getCmdStrings() []string {
-	cmdPrefix := getCmdPrefix()
+	prefix := getCmdPrefix()           // any command given as arguments on the command line
 	cmdLineArgSets := getCmdLineArgs() // looks for ::: arguments
 	var cmds []string
 
+	// get commands
 	if len(cmdLineArgSets) == 0 { // get args from stdin
-		// one command per line
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Split(bufio.ScanLines)
+		cmds = readCmdsFromFile("-")
 
-		// slurp in all the lines
-		for scanner.Scan() {
-			cmds = append(cmds, strings.Join([]string{cmdPrefix, scanner.Text()}, " ")) // prefix with any commands
-		}
 	} else {
 		cmds = permuteCmdLineArgSets(cmdLineArgSets)
-		for i, c := range cmds {
-			cmds[i] = strings.Join([]string{cmdPrefix, c}, " ")
-		}
+	}
+
+	// prefix commands
+	for i, c := range cmds {
+		cmds[i] = strings.Join([]string{prefix, c}, " ")
 	}
 
 	return cmds
