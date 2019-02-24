@@ -10,26 +10,35 @@ Parallel command executor with a focus on simplicity and good cross-platform beh
 ## Usage
 
     cat args.txt | zoom [optional command] 
+    zoom [optional command] ::: arguments
 
-The file can be arguments for the command, or if none was given, full commands. In either case it's one per line
+Arguments can be read from either standard input or passed on the command line. They can be arguments for a command given on the command line or full commands themselves. In either case it's one per line
 
-An example with arguments
+An example with arguments from standard input
 
     $ cat args.txt
 
     8.8.8.8
     8.8.4.4
 
-    $ cat args.txt | zoom ping
+    $ cat args.txt | zoom ping -c1
 
-An example with commands
+An example with commands from standard input
 
     $ cat commands.txt
 
-    ping 8.8.8.8
-    ping 8.8.4.4
+    ping -c1 8.8.8.8
+    ping -c1 8.8.4.4
 
     $ cat commands.txt | zoom
+
+An example with arguments on the command line
+
+    $ zoom ping -c1 ::: 8.8.8.8 8.8.4.4
+
+An example with commands on the command line
+
+    $ zoom ::: "ping -c1 8.8.8.8" "ping -c1 8.8.4.4"
 
 `zoom` will build jobs by taking each argument, prefixing it with the command if you gave one and then run those jobs for you in parallel. It will invoke a `$SHELL` for each command so you can use things like `&&`, `||` and other goodness 
 
