@@ -6,7 +6,7 @@ import (
 	"github.com/pwr22/zoom/run"
 )
 
-const version = "v0.1.0"
+const version = "v0.1.1"
 
 func main() {
 	parseArgs()
