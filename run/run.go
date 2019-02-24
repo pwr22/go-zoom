@@ -53,6 +53,7 @@ func printJobs(finishedJob *job.Job, state *runState) {
 
 func (state *runState) handleFinishedJob(finishedJob *job.Job) {
 	printJobs(finishedJob, state)
+	state.jobs[finishedJob.Num] = nil
 
 	if !state.stoppingEarly && state.nextJobToRunIdx < state.totalCmdsCount { // start any remaining jobs if things are still going smoothly
 		nextJob := job.Create(state.nextJobToRunIdx, state.cmdStrs[state.nextJobToRunIdx])
@@ -84,7 +85,9 @@ func (state *runState) handleErroredJob(erroredJob *job.Job) {
 
 		// stop all the running jobs
 		for _, j := range state.jobs {
-			j.Stop()
+			if j != nil {
+				j.Stop()
+			}
 		}
 
 		state.stoppingEarly = true                                      // make sure we don't come back into this branch
@@ -105,7 +108,9 @@ func (state *runState) handleStopEarlySignal() {
 
 		// stop all the running jobs
 		for _, j := range state.jobs {
-			j.Stop()
+			if j != nil {
+				j.Stop()
+			}
 		}
 
 		state.stoppingEarly = true                                      // make sure we don't come back into this branch
