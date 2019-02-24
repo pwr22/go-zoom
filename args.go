@@ -13,6 +13,7 @@ import (
 var printVersion = flag.BoolP("version", "V", false, "print version information")
 var parallelism = flag.IntP("jobs", "j", runtime.NumCPU(), "number of jobs to run at once or 0 for as many as possible")
 var keepOrder = flag.BoolP("keep-order", "k", false, "print output in the order jobs were run instead of the order they finish")
+var dryRun = flag.Bool("dry-run", false, "print the commands that would be run instead of running them") // no shorthand to match GNU Parallel
 
 // parse flags and commandline args
 func parseArgs() {
@@ -21,6 +22,13 @@ func parseArgs() {
 
 	if *printVersion {
 		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	if *dryRun {
+		for _, c := range getCmdStrings() {
+			fmt.Println(c)
+		}
 		os.Exit(0)
 	}
 }
