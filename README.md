@@ -18,7 +18,7 @@ There are two main modes of operation
 - Args from standard input
 - Args from command line and / or files (can still read from stdin by passing `-`)
 
-In either mode an optional command will be prepended to each argument provided. If there isn't a command then each argument is a full command itself
+In either mode the optional command may contain a placeholder `{}` which will be replaced with each argument provided, otherwise arguments will be appended to the end of the command. If there isn't a command then each argument is a full command itself
 
 For each of these zoom will invoke a `$SHELL` so you can use things like `&&`, `||` and other goodness. Watch out quote them properly if you pass them on the commandline but you shouldn't need to worry if loading them from a file 
 
@@ -40,9 +40,9 @@ An example with commands from standard input
 
     $ cat commands.txt | zoom
 
-An example with arguments on the command line
+An example with arguments on the command line and using a placeholder
 
-    $ zoom ping -c1 ::: 8.8.8.8 8.8.4.4
+    $ zoom ping {} -c1 ::: 8.8.8.8 8.8.4.4
 
 An example with commands on the command line
 
