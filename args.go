@@ -187,6 +187,8 @@ func readCmdsFromFile(name string) []string {
 	return cmds
 }
 
+const placeHolder string = "{}"
+
 // read in commands to run
 func getCmdStrings() []string {
 	prefix := getCmdPrefix()       // any command given as arguments on the command line
@@ -201,9 +203,14 @@ func getCmdStrings() []string {
 		cmds = permuteArgSets(cmdLineArgSets)
 	}
 
-	// prefix commands
+	// build commands
+	placeholderPresent := strings.Contains(prefix, placeHolder)
 	for i, c := range cmds {
-		cmds[i] = strings.Join([]string{prefix, c}, " ")
+		if placeholderPresent {
+			cmds[i] = strings.Replace(prefix, placeHolder, c, -1)
+		} else { // default mode is to add arguments to the end of the command, if any
+			cmds[i] = strings.Join([]string{prefix, c}, " ")
+		}
 	}
 
 	return cmds
