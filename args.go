@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"strings"
@@ -34,27 +35,81 @@ func parseArgs() {
 }
 
 // return any command arguments given on the command line, if any
-func getCmdLineArgs() [][]string {
+// TODO pull out this parsing into a separate file and simplify it
+func getArgSets() [][]string {
 	var cmdSets [][]string
 
-	inList, start := false, 0
+	inArgList, inFileList, setStartIdx := false, false, 0
 	for i, a := range flag.Args() {
+		// time to start building a new arg set
 		if a == ":::" {
-			if !inList { // this is the first
-				inList = true
-			} else {
-				cmdSets = append(cmdSets, flag.Args()[start:i])
+			// empty ::: or :::: are invalid
+			if (inArgList || inFileList) && setStartIdx == i {
+				var arg, symType string
+				if inArgList {
+					arg, symType = ":::", "arguments"
+				} else {
+					arg, symType = "::::", "files"
+				}
+
+				fmt.Fprintln(os.Stderr, arg+" must be followed by "+symType)
+				os.Exit(2)
+			} else if inFileList { // store the file set we were building
+				for _, file := range flag.Args()[setStartIdx:i] {
+					cmdSets = append(cmdSets, readCmdsFromFile(file))
+				}
+				inFileList = false
+			} else if inArgList { // store the previous arg set we were building
+				cmdSets = append(cmdSets, flag.Args()[setStartIdx:i])
 			}
 
-			start = i + 1 // we always restart counting
+			// and now we are building a new arg set
+			inArgList = true
+			setStartIdx = i + 1
+		} else if a == "::::" { // time to start building a new arg set
+			// empty ::: or :::: are invalid
+			if (inArgList || inFileList) && setStartIdx == i {
+				var arg, symType string
+				if inArgList {
+					arg, symType = ":::", "arguments"
+				} else {
+					arg, symType = "::::", "files"
+				}
+
+				fmt.Fprintln(os.Stderr, arg+" must be followed by "+symType)
+				os.Exit(2)
+			} else if inArgList { // store the arg set we were building
+				cmdSets = append(cmdSets, flag.Args()[setStartIdx:i])
+				inArgList = false
+			} else if inFileList { // store the previous file set we were building
+				for _, file := range flag.Args()[setStartIdx:i] {
+					cmdSets = append(cmdSets, readCmdsFromFile(file))
+				}
+			}
+
+			// and now we're building a new file set
+			inFileList = true
+			setStartIdx = i + 1
 		}
 	}
 
-	if inList && start == len(flag.Args()) { // ::: was the last element
-		fmt.Fprintln(os.Stderr, "::: must be followed by arguments")
+	// trailing ::: or :::: are invalid
+	if (inArgList || inFileList) && setStartIdx == len(flag.Args()) {
+		var arg, symType string
+		if inArgList {
+			arg, symType = ":::", "arguments"
+		} else {
+			arg, symType = "::::", "files"
+		}
+
+		fmt.Fprintln(os.Stderr, arg+" must be followed by "+symType)
 		os.Exit(2)
-	} else if inList {
-		cmdSets = append(cmdSets, flag.Args()[start:len(flag.Args())])
+	} else if inArgList { // otherwise we just need to store the final set
+		cmdSets = append(cmdSets, flag.Args()[setStartIdx:len(flag.Args())])
+	} else if inFileList {
+		for _, file := range flag.Args()[setStartIdx:len(flag.Args())] {
+			cmdSets = append(cmdSets, readCmdsFromFile(file))
+		}
 	}
 
 	return cmdSets
@@ -65,7 +120,7 @@ func getCmdPrefix() string {
 	start, end := 0, len(flag.Args())
 
 	for i, a := range flag.Args() {
-		if a == ":::" { // stop as soon as we see any command arguments stuff
+		if a == ":::" || a == "::::" { // stop as soon as we see any command arguments stuff
 			end = i
 			break
 		}
@@ -75,7 +130,7 @@ func getCmdPrefix() string {
 }
 
 // returns strings permuting all the argument sets given
-func permuteCmdLineArgSets(sets [][]string) []string {
+func permuteArgSets(sets [][]string) []string {
 	totalCmds := 1
 	for _, cs := range sets {
 		totalCmds *= len(cs)
@@ -106,26 +161,49 @@ func permuteCmdLineArgSets(sets [][]string) []string {
 	return cmds
 }
 
+// reads in commands from a file with "-" meaning std in
+func readCmdsFromFile(name string) []string {
+	var file io.Reader
+	if name == "-" {
+		file = os.Stdin
+	} else {
+		f, err := os.Open(name)
+		if err != nil {
+			panic(err)
+		}
+		file = f
+	}
+
+	// one command per line
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	// slurp in all the lines
+	var cmds []string
+	for scanner.Scan() {
+		cmds = append(cmds, scanner.Text())
+	}
+
+	return cmds
+}
+
 // read in commands to run
 func getCmdStrings() []string {
-	cmdPrefix := getCmdPrefix()
-	cmdLineArgSets := getCmdLineArgs() // looks for ::: arguments
+	prefix := getCmdPrefix()       // any command given as arguments on the command line
+	cmdLineArgSets := getArgSets() // looks for ::: arguments
 	var cmds []string
 
+	// get commands
 	if len(cmdLineArgSets) == 0 { // get args from stdin
-		// one command per line
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Split(bufio.ScanLines)
+		cmds = readCmdsFromFile("-")
 
-		// slurp in all the lines
-		for scanner.Scan() {
-			cmds = append(cmds, strings.Join([]string{cmdPrefix, scanner.Text()}, " ")) // prefix with any commands
-		}
 	} else {
-		cmds = permuteCmdLineArgSets(cmdLineArgSets)
-		for i, c := range cmds {
-			cmds[i] = strings.Join([]string{cmdPrefix, c}, " ")
-		}
+		cmds = permuteArgSets(cmdLineArgSets)
+	}
+
+	// prefix commands
+	for i, c := range cmds {
+		cmds[i] = strings.Join([]string{prefix, c}, " ")
 	}
 
 	return cmds
