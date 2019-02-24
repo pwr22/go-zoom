@@ -216,6 +216,12 @@ I find this to be more consistent across `:::` and `::::` so the zoom semantics 
 
 ## Installation
 
+### Arch Linux
+
+You can install from the AUR with `yay -S zoom-parallel`
+
+### Anything Else
+
 Head over to the [releases](https://github.com/pwr22/zoom/releases) page, download the binary for your operating system and put it somewhere in your `$PATH`
 
 ## Why
