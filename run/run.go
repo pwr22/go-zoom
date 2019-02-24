@@ -43,6 +43,7 @@ func printJobs(finishedJob *job.Job, state *runState) {
 			for idx := finishedJob.Num; idx < len(state.jobsToPrint) && state.jobsToPrint[idx] != nil; idx++ {
 				fmt.Print(state.jobsToPrint[idx].Out)
 				state.jobsToPrint[idx] = nil
+				state.lastJobPrinted = idx
 			}
 		}
 	} else { // output immediately
