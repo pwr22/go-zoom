@@ -20,7 +20,15 @@ func TestCreate(t *testing.T) {
 		t.Fatal("Num is not set")
 	}
 
-	testSysProcAttr(t, job)
+	if job.Cmd == nil {
+		t.Fatal("Cmd is not set")
+	}
+
+	if job.Cmd.Path != shell {
+		t.Fatal("The Cmd is not using $SHELL")
+	}
+
+	testCreateSpecificOS(t, job)
 
 	if job.Cmd.Process != nil {
 		t.Fatal("job should not have been started yet")
