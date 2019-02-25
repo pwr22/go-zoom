@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreate(t *testing.T) {
-	job := Create(42, sleep)
+	job := Create(42, sleepCmd)
 
 	if job.Err != nil {
 		t.Fatal("err is not set to nil")
@@ -33,11 +33,11 @@ func TestStopNil(t *testing.T) {
 }
 
 func TestStopUnstarted(t *testing.T) {
-	Create(42, sleep).Stop()
+	Create(42, sleepCmd).Stop()
 }
 
 func TestStopStarted(t *testing.T) {
-	job := Create(42, sleep)
+	job := Create(42, sleepCmd)
 
 	start := time.Now()
 	if err := job.Cmd.Start(); err != nil {

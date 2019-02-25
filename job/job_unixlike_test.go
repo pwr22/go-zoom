@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const sleep = "sleep 1"
+const sleepCmd = "sleep 1"
 
 func testSysProcAttr(t *testing.T, job *Job) {
 	if job.Cmd.SysProcAttr.Setpgid != true {
