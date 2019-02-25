@@ -6,11 +6,17 @@ clone_folder: c:\gopath\src\github.com\pwr22\zoom
 environment:
   GOPATH: c:\gopath
 
-stack: go 1.10
+stack:
+  - go 1.10
+  - go 1.11
 
 before_test:
   - go get ./...
   - go vet ./...
 
 test_script:
-  - go test ./...
+  - go test -coverprofile=coverage.txt -covermode=atomic ./...
+
+after_test:
+  - choco install codecov
+  - codecov -f coverage.txt
