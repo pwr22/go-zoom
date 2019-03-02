@@ -2,6 +2,7 @@ package run
 
 import (
 	"os/exec"
+	"syscall"
 	"testing"
 	"time"
 
@@ -71,5 +72,31 @@ func TestCmdsExplicitParallelism(t *testing.T) {
 func TestCmdsParallelismHigherThanJobCount(t *testing.T) {
 	if exitStatus := Cmds(workingCmds, 100, false); exitStatus != 0 {
 		t.Fatalf("non-zero exit %d", exitStatus)
+	}
+}
+
+func TestCmdsKeepOrder(t *testing.T) {
+	if exitStatus := Cmds(workingCmds, 0, true); exitStatus != 0 {
+		t.Fatalf("non-zero exit %d", exitStatus)
+	}
+}
+
+var oneCmdFails = []string{"echo foo", "non-existent-command"}
+
+func TestFailingCmds(t *testing.T) {
+	if exitStatus := Cmds(oneCmdFails, 2, false); exitStatus == 0 {
+		t.Fatalf("zero exit")
+	}
+}
+
+var sleepCmds = []string{"sleep 1", "sleep 1"}
+
+func TestKeyboardInterruptCmds(t *testing.T) {
+	go func() {
+		time.After(100 * time.Millisecond)
+		syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	}()
+	if exitStatus := Cmds(sleepCmds, 0, false); exitStatus == 0 {
+		t.Fatalf("zero exit")
 	}
 }
