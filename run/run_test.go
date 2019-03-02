@@ -73,3 +73,17 @@ func TestCmdsParallelismHigherThanJobCount(t *testing.T) {
 		t.Fatalf("non-zero exit %d", exitStatus)
 	}
 }
+
+func TestCmdsKeepOrder(t *testing.T) {
+	if exitStatus := Cmds(workingCmds, 0, true); exitStatus != 0 {
+		t.Fatalf("non-zero exit %d", exitStatus)
+	}
+}
+
+var oneCmdFails = []string{"echo foo", "non-existent-command"}
+
+func TestFailingCmds(t *testing.T) {
+	if exitStatus := Cmds(oneCmdFails, 2, false); exitStatus == 0 {
+		t.Fatalf("zero exit")
+	}
+}
