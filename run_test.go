@@ -85,3 +85,15 @@ func TestFailingCmds(t *testing.T) {
 		t.Fatalf("zero exit")
 	}
 }
+
+func BenchmarkCmdsEcho1(b *testing.B) {
+	benchmarkCmdsEcho(1, b)
+}
+
+func BenchmarkCmdsEcho10(b *testing.B) {
+	benchmarkCmdsEcho(10, b)
+}
+
+func BenchmarkCmdsEcho100(b *testing.B) {
+	benchmarkCmdsEcho(100, b)
+}
