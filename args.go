@@ -40,6 +40,7 @@ func getArgSets() [][]string {
 	var cmdSets [][]string
 
 	inArgList, inFileList, setStartIdx := false, false, 0
+	stdinRead := false // only allow this as input source once because we'll drain it that first time
 	for i, a := range flag.Args() {
 		// time to start building a new arg set
 		if a == ":::" {
@@ -56,7 +57,13 @@ func getArgSets() [][]string {
 				os.Exit(2)
 			} else if inFileList { // store the file set we were building
 				for _, file := range flag.Args()[setStartIdx:i] {
+					if file == "-" && stdinRead {
+						fmt.Fprintln(os.Stderr, "standard input cannot be used as an argument source multiple times")
+						os.Exit(2)
+					}
+
 					cmdSets = append(cmdSets, readCmdsFromFile(file))
+					stdinRead = true
 				}
 				inFileList = false
 			} else if inArgList { // store the previous arg set we were building
@@ -83,7 +90,13 @@ func getArgSets() [][]string {
 				inArgList = false
 			} else if inFileList { // store the previous file set we were building
 				for _, file := range flag.Args()[setStartIdx:i] {
+					if file == "-" && stdinRead {
+						fmt.Fprintln(os.Stderr, "standard input cannot be used as an argument source multiple times")
+						os.Exit(2)
+					}
+
 					cmdSets = append(cmdSets, readCmdsFromFile(file))
+					stdinRead = true
 				}
 			}
 
@@ -108,7 +121,13 @@ func getArgSets() [][]string {
 		cmdSets = append(cmdSets, flag.Args()[setStartIdx:len(flag.Args())])
 	} else if inFileList {
 		for _, file := range flag.Args()[setStartIdx:len(flag.Args())] {
+			if file == "-" && stdinRead {
+				fmt.Fprintln(os.Stderr, "standard input cannot be used as an argument source multiple times")
+				os.Exit(2)
+			}
+
 			cmdSets = append(cmdSets, readCmdsFromFile(file))
+			stdinRead = true
 		}
 	}
 
