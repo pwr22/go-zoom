@@ -131,6 +131,11 @@ func getCmdPrefix() string {
 
 // returns strings permuting all the argument sets given
 func permuteArgSets(sets [][]string) []string {
+	// no arg sets permutes to no args
+	if len(sets) == 0 {
+		return []string{}
+	}
+
 	totalCmds := 1
 	for _, cs := range sets {
 		totalCmds *= len(cs)
