@@ -115,7 +115,13 @@ func TestGetArgSets(t *testing.T) {
 			// TODO refactor so this isn't called directly and we pass arguments instead
 			os.Args = tC.args
 			parseArgs()
-			if as := getArgSets(); !reflect.DeepEqual(as, tC.exp) {
+
+			as, err := getArgSets()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(as, tC.exp) {
 				t.Fatalf("expected %v but got %v", tC.exp, as)
 			}
 		})
@@ -220,7 +226,12 @@ func TestReadCmdsFromFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cmds := readCmdsFromFile(tmpfile.Name()); !reflect.DeepEqual(cmds, exp) {
+	cmds, err := readCmdsFromFile(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(cmds, exp) {
 		t.Fatalf("expected %v but got %v", exp, cmds)
 	}
 
@@ -251,7 +262,13 @@ func TestGetCmdStrings(t *testing.T) {
 			// TODO refactor so this isn't called directly and we pass arguments instead
 			os.Args = tC.args
 			parseArgs()
-			if c := getCmdStrings(); !reflect.DeepEqual(c, tC.exp) {
+
+			c, err := getCmdStrings()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(c, tC.exp) {
 				t.Fatalf("expected %v but got %v", tC.exp, c)
 			}
 		})

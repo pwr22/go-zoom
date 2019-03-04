@@ -30,12 +30,12 @@ func (job *Job) Stop() {
 func sendCtrlBreak(pid int) {
 	dll, err := syscall.LoadDLL("kernel32.dll")
 	if err != nil {
-		panic(err)
+		panic(err) // should never happen
 	}
 
 	proc, err := dll.FindProc("GenerateConsoleCtrlEvent")
 	if err != nil {
-		panic(err)
+		panic(err) // should never happen
 	}
 
 	res, _, err := proc.Call(syscall.CTRL_BREAK_EVENT, uintptr(pid))
