@@ -35,6 +35,7 @@ func parseArgs() (exitEarly bool, err error) {
 		for _, c := range cmds {
 			fmt.Println(c)
 		}
+
 		return true, nil
 	}
 
@@ -239,9 +240,7 @@ func getCmdStrings() ([]string, error) {
 
 	var cmds []string
 	if len(cmdLineArgSets) == 0 { // get args from stdin
-		if cmds, err = readCmdsFromFile("-"); err != nil {
-			return nil, err
-		}
+		cmds, _ = readCmdsFromFile("-") // read from stdin won't ever return an err right now
 
 	} else { // get them from command line and / or files
 		cmds = permuteArgSets(cmdLineArgSets)

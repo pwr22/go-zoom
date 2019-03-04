@@ -33,20 +33,43 @@ func TestParseArgsWithNoArgs(t *testing.T) {
 	parseArgs()
 }
 
-// Cannot run yet as os.Exit get's called
-// func TestParseArgsWithVersion(t *testing.T) {
-// 	os.Args = []string{"zoom", "--version"}
-// 	parseArgs()
-// }
+func TestParseArgsWithVersion(t *testing.T) {
+	os.Args = []string{"zoom", "--version"}
 
-// Cannot run yet as os.Exit get's called
-// func TestParseArgsWithDryRun(t *testing.T) {
-// 	os.Args = []string{"zoom", "--dry-run"}
-// 	parseArgs()
-// }
+	exitEarly, err := parseArgs()
+	defer func() { *printVersion = false }() // reset version for later tests
 
-// TODO somehow test invalid placement of ::: and ::::.
-// Can't do that right now as it os.Exit() gets called
+	if err != nil {
+		t.Fatal(err)
+	} else if !exitEarly {
+		t.Fatalf("exitEarly should be true")
+	}
+}
+
+func TestParseArgsWithDryRun(t *testing.T) {
+	os.Args = []string{"zoom", "--dry-run", ":::", "cmd"}
+
+	exitEarly, err := parseArgs()
+	defer func() { *dryRun = false }()
+
+	if err != nil {
+		t.Fatal(err)
+	} else if !exitEarly {
+		t.Fatalf("exitEarly should be true")
+	}
+}
+
+func TestParseArgsWithDryRunAndFailedCmdsBuild(t *testing.T) {
+	os.Args = []string{"zoom", "--dry-run", "::::", "non-existent-file"}
+
+	_, err := parseArgs()
+	defer func() { *dryRun = false }()
+
+	if err == nil {
+		t.Fatalf("should have errored")
+	}
+}
+
 func TestGetArgSets(t *testing.T) {
 	// setup file contents for file based tests
 	tmpfile, err := ioutil.TempFile("", "zoomtest")
@@ -123,6 +146,94 @@ func TestGetArgSets(t *testing.T) {
 
 			if !reflect.DeepEqual(as, tC.exp) {
 				t.Fatalf("expected %v but got %v", tC.exp, as)
+			}
+		})
+	}
+}
+
+func TestGetArgSetsErrs(t *testing.T) {
+	// setup file contents for file based tests
+	tmpfile, err := ioutil.TempFile("", "zoomtest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	expFileArgs := []string{"a", "b", "c"}
+	for _, a := range expFileArgs {
+		if _, err := tmpfile.WriteString(a + "\n"); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		desc string
+		args []string
+	}{
+		{
+			desc: "trailing empty :::",
+			args: []string{"zoom", "echo", ":::"},
+		},
+		{
+			desc: "trailing empty ::::",
+			args: []string{"zoom", "echo", "::::"},
+		},
+		{
+			desc: "beginning empty ::: followed by :::",
+			args: []string{"zoom", "echo", ":::", ":::", "arg"},
+		},
+		{
+			desc: "beginning empty :::: followed by :::",
+			args: []string{"zoom", "echo", "::::", ":::", "arg"},
+		},
+		{
+			desc: "beginning empty ::: followed by ::::",
+			args: []string{"zoom", "echo", ":::", "::::", tmpfile.Name()},
+		},
+		{
+			desc: "beginning empty :::: followed by :::",
+			args: []string{"zoom", "echo", "::::", "::::", tmpfile.Name()},
+		},
+		{
+			desc: "trailing double standard input",
+			args: []string{"zoom", "echo", "::::", "-", "-"},
+		},
+		{
+			desc: "beginning double standard input followed by :::",
+			args: []string{"zoom", "echo", "::::", "-", "-", ":::", "arg"},
+		},
+		{
+			desc: "beginning double standard input followed by ::::",
+			args: []string{"zoom", "echo", "::::", "-", "-", "::::", tmpfile.Name()},
+		},
+		{
+			desc: "beginning non-existent file followed by :::",
+			args: []string{"zoom", "echo", "::::", "non-existent-file", ":::", "arg"},
+		},
+		{
+			desc: "beginning non-existent file followed by ::::",
+			args: []string{"zoom", "echo", "::::", "non-existent-file", "::::", tmpfile.Name()},
+		},
+		{
+			desc: "trailing non-existent file",
+			args: []string{"zoom", "echo", "::::", "non-existent-file"},
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			// flags.Args() is used so gotta call this here
+			// TODO refactor so this isn't called directly and we pass arguments instead
+			os.Args = tC.args
+			parseArgs()
+
+			_, err := getArgSets()
+			if err == nil {
+				t.Fatalf("should have errored")
 			}
 		})
 	}
@@ -207,7 +318,6 @@ func TestPlaceHolder(t *testing.T) {
 	}
 }
 
-// TODO somehow test stdin
 func TestReadCmdsFromFile(t *testing.T) {
 	exp := []string{"1", "2", "3"}
 	tmpfile, err := ioutil.TempFile("", "zoomtest")
@@ -237,6 +347,20 @@ func TestReadCmdsFromFile(t *testing.T) {
 
 }
 
+func TestReadCmdsFromStdin(t *testing.T) {
+	var exp []string
+
+	cmds, err := readCmdsFromFile("-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(cmds, exp) {
+		t.Fatalf("expected %v but got %v", exp, cmds)
+	}
+
+}
+
 // TODO somehow test reading from stdin
 func TestGetCmdStrings(t *testing.T) {
 	testCases := []struct {
@@ -253,6 +377,10 @@ func TestGetCmdStrings(t *testing.T) {
 			desc: "arglist with placeholder",
 			args: []string{"zoom", "echo", "{}", "-n", ":::", "1", "2"},
 			exp:  []string{"echo 1 -n", "echo 2 -n"},
+		},
+		{
+			desc: "args from stdin",
+			args: []string{"zoom", "echo"},
 		},
 	}
 
