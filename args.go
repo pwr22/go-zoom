@@ -17,26 +17,34 @@ var keepOrder = flag.BoolP("keep-order", "k", false, "print output in the order 
 var dryRun = flag.Bool("dry-run", false, "print the commands that would be run instead of running them") // no shorthand to match GNU Parallel
 
 // parse flags and commandline args
-func parseArgs() {
+func parseArgs() (exitEarly bool, err error) {
 	flag.SetInterspersed(false) // don't confuse flags to the command with our own
 	flag.Parse()
 
 	if *printVersion {
 		fmt.Println(version)
-		os.Exit(0)
+		return true, nil
 	}
 
 	if *dryRun {
-		for _, c := range getCmdStrings() {
+		cmds, err := getCmdStrings()
+		if err != nil {
+			return false, err
+		}
+
+		for _, c := range cmds {
 			fmt.Println(c)
 		}
-		os.Exit(0)
+
+		return true, nil
 	}
+
+	return false, nil
 }
 
 // return any command arguments given on the command line, if any
 // TODO pull out this parsing into a separate file and simplify it
-func getArgSets() [][]string {
+func getArgSets() ([][]string, error) {
 	var cmdSets [][]string
 
 	inArgList, inFileList, setStartIdx := false, false, 0
@@ -53,16 +61,19 @@ func getArgSets() [][]string {
 					arg, symType = "::::", "files"
 				}
 
-				fmt.Fprintln(os.Stderr, arg+" must be followed by "+symType)
-				os.Exit(2)
+				return nil, fmt.Errorf("%v must be followed by %v", arg, symType)
 			} else if inFileList { // store the file set we were building
 				for _, file := range flag.Args()[setStartIdx:i] {
 					if file == "-" && stdinRead {
-						fmt.Fprintln(os.Stderr, "standard input cannot be used as an argument source multiple times")
-						os.Exit(2)
+						return nil, fmt.Errorf("standard input cannot be used as an argument source multiple times")
 					}
 
-					cmdSets = append(cmdSets, readCmdsFromFile(file))
+					cmds, err := readCmdsFromFile(file)
+					if err != nil {
+						return nil, err
+					}
+
+					cmdSets = append(cmdSets, cmds)
 					stdinRead = true
 				}
 				inFileList = false
@@ -83,19 +94,22 @@ func getArgSets() [][]string {
 					arg, symType = "::::", "files"
 				}
 
-				fmt.Fprintln(os.Stderr, arg+" must be followed by "+symType)
-				os.Exit(2)
+				return nil, fmt.Errorf("%v must be followed by %v", arg, symType)
 			} else if inArgList { // store the arg set we were building
 				cmdSets = append(cmdSets, flag.Args()[setStartIdx:i])
 				inArgList = false
 			} else if inFileList { // store the previous file set we were building
 				for _, file := range flag.Args()[setStartIdx:i] {
 					if file == "-" && stdinRead {
-						fmt.Fprintln(os.Stderr, "standard input cannot be used as an argument source multiple times")
-						os.Exit(2)
+						return nil, fmt.Errorf("standard input cannot be used as an argument source multiple times")
 					}
 
-					cmdSets = append(cmdSets, readCmdsFromFile(file))
+					cmds, err := readCmdsFromFile(file)
+					if err != nil {
+						return nil, err
+					}
+
+					cmdSets = append(cmdSets, cmds)
 					stdinRead = true
 				}
 			}
@@ -115,23 +129,26 @@ func getArgSets() [][]string {
 			arg, symType = "::::", "files"
 		}
 
-		fmt.Fprintln(os.Stderr, arg+" must be followed by "+symType)
-		os.Exit(2)
+		return nil, fmt.Errorf("%v must be followed by %v", arg, symType)
 	} else if inArgList { // otherwise we just need to store the final set
 		cmdSets = append(cmdSets, flag.Args()[setStartIdx:len(flag.Args())])
 	} else if inFileList {
 		for _, file := range flag.Args()[setStartIdx:len(flag.Args())] {
 			if file == "-" && stdinRead {
-				fmt.Fprintln(os.Stderr, "standard input cannot be used as an argument source multiple times")
-				os.Exit(2)
+				return nil, fmt.Errorf("standard input cannot be used as an argument source multiple times")
 			}
 
-			cmdSets = append(cmdSets, readCmdsFromFile(file))
+			cmds, err := readCmdsFromFile(file)
+			if err != nil {
+				return nil, err
+			}
+
+			cmdSets = append(cmdSets, cmds)
 			stdinRead = true
 		}
 	}
 
-	return cmdSets
+	return cmdSets, nil
 }
 
 // return the command prefix given on the commandline, if any
@@ -186,14 +203,14 @@ func permuteArgSets(sets [][]string) []string {
 }
 
 // reads in commands from a file with "-" meaning std in
-func readCmdsFromFile(name string) []string {
+func readCmdsFromFile(name string) ([]string, error) {
 	var file io.Reader
 	if name == "-" {
 		file = os.Stdin
 	} else {
 		f, err := os.Open(name)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		file = f
 	}
@@ -208,22 +225,24 @@ func readCmdsFromFile(name string) []string {
 		cmds = append(cmds, scanner.Text())
 	}
 
-	return cmds
+	return cmds, nil
 }
 
 const placeHolder string = "{}"
 
 // read in commands to run
-func getCmdStrings() []string {
-	prefix := getCmdPrefix()       // any command given as arguments on the command line
-	cmdLineArgSets := getArgSets() // looks for ::: arguments
+func getCmdStrings() ([]string, error) {
+	prefix := getCmdPrefix()            // any command given as arguments on the command line
+	cmdLineArgSets, err := getArgSets() // looks for ::: arguments
+	if err != nil {
+		return nil, err
+	}
+
 	var cmds []string
-
-	// get commands
 	if len(cmdLineArgSets) == 0 { // get args from stdin
-		cmds = readCmdsFromFile("-")
+		cmds, _ = readCmdsFromFile("-") // read from stdin won't ever return an err right now
 
-	} else {
+	} else { // get them from command line and / or files
 		cmds = permuteArgSets(cmdLineArgSets)
 	}
 
@@ -237,5 +256,5 @@ func getCmdStrings() []string {
 		}
 	}
 
-	return cmds
+	return cmds, nil
 }

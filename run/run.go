@@ -122,7 +122,7 @@ func (state *runState) handleStopEarlySignal() {
 }
 
 // Cmds executes the commands its given in parallel
-func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) int {
+func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 	if numOfRunners == 0 { // means run everything at once
 		numOfRunners = len(cmdStrs)
 	} else if numOfRunners > len(cmdStrs) { // or if there are more runners than commands then drop the excess
