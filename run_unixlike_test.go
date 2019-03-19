@@ -30,6 +30,7 @@ func benchmarkCmdsEcho(n int, b *testing.B) {
 	for i := range cmds {
 		cmds[i] = "echo foo > /dev/null"
 	}
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		Cmds(cmds, 0, false)

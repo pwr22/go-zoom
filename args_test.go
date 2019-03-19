@@ -402,3 +402,169 @@ func TestGetCmdStrings(t *testing.T) {
 		})
 	}
 }
+
+// benchmarks
+
+// a single arglist
+
+func benchmarkArglist(n int, b *testing.B) {
+	os.Args = make([]string, 0, n+3)
+	os.Args = append(os.Args, "zoom", "echo", ":::")
+	for i := 0; i < n; i++ {
+		os.Args = append(os.Args, "foo")
+	}
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if _, err := getCmdStrings(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkArglist1(b *testing.B) {
+	benchmarkArglist(1, b)
+}
+
+func BenchmarkArglist10(b *testing.B) {
+	benchmarkArglist(10, b)
+}
+
+func BenchmarkArglist100(b *testing.B) {
+	benchmarkArglist(100, b)
+}
+
+func BenchmarkArglist1000(b *testing.B) {
+	benchmarkArglist(1000, b)
+}
+
+// two arglists
+
+func benchmarkPermutedArglists(n int, b *testing.B) {
+	os.Args = make([]string, 0, 2*n+4)
+	os.Args = append(os.Args, "zoom", "echo", ":::")
+	for i := 0; i < n; i++ {
+		os.Args = append(os.Args, "foo")
+	}
+	os.Args = append(os.Args, ":::")
+	for i := 0; i < n; i++ {
+		os.Args = append(os.Args, "bar")
+	}
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if _, err := getCmdStrings(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkPermutedArglists1(b *testing.B) {
+	benchmarkPermutedArglists(1, b)
+}
+
+func BenchmarkPermutedArglists10(b *testing.B) {
+	benchmarkPermutedArglists(10, b)
+}
+
+func BenchmarkPermutedArglists100(b *testing.B) {
+	benchmarkPermutedArglists(100, b)
+}
+
+func BenchmarkPermutedArglists1000(b *testing.B) {
+	benchmarkPermutedArglists(1000, b)
+}
+
+// a single arg file
+
+func benchmarkArgfile(n int, b *testing.B) {
+	// setup file contents for file based tests
+	tmpfile, err := ioutil.TempFile("", "zoomtest")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	for i := 0; i < n; i++ {
+		if _, err := tmpfile.WriteString("foo\n"); err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		b.Fatal(err)
+	}
+
+	os.Args = []string{"zoom", "echo", "::::", tmpfile.Name()}
+	parseArgs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if _, err := getCmdStrings(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkArgfile1(b *testing.B) {
+	benchmarkArgfile(1, b)
+}
+
+func BenchmarkArgfile10(b *testing.B) {
+	benchmarkArgfile(10, b)
+}
+
+func BenchmarkArgfile100(b *testing.B) {
+	benchmarkArgfile(100, b)
+}
+
+func BenchmarkArgfile1000(b *testing.B) {
+	benchmarkArgfile(1000, b)
+}
+
+// two arg file
+
+func benchmarkPermutedArgfiles(n int, b *testing.B) {
+	// setup file contents for file based tests
+	tmpfile, err := ioutil.TempFile("", "zoomtest")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	for i := 0; i < n; i++ {
+		if _, err := tmpfile.WriteString("foo\n"); err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	if err := tmpfile.Close(); err != nil {
+		b.Fatal(err)
+	}
+
+	os.Args = []string{"zoom", "echo", "::::", tmpfile.Name(), "::::", tmpfile.Name()}
+	parseArgs()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if _, err := getCmdStrings(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkPermutedArgfiles1(b *testing.B) {
+	benchmarkPermutedArgfiles(1, b)
+}
+
+func BenchmarkPermutedArgfiles10(b *testing.B) {
+	benchmarkPermutedArgfiles(10, b)
+}
+
+func BenchmarkPermutedArgfiles100(b *testing.B) {
+	benchmarkPermutedArgfiles(100, b)
+}
+
+func BenchmarkPermutedArgfiles1000(b *testing.B) {
+	benchmarkPermutedArgfiles(1000, b)
+}

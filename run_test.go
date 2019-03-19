@@ -86,6 +86,8 @@ func TestFailingCmds(t *testing.T) {
 	}
 }
 
+// benchmarks
+
 func BenchmarkCmdsEcho1(b *testing.B) {
 	benchmarkCmdsEcho(1, b)
 }
