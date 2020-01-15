@@ -67,12 +67,12 @@ func TestStopStarted(t *testing.T) {
 
 func BenchmarkCreate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Create(42, sleepCmd)
+		CreateJob(42, jobSleepCmd)
 	}
 }
 
 func BenchmarkStopUnstartedJob(b *testing.B) {
-	j := Create(42, sleepCmd)
+	j := CreateJob(42, jobSleepCmd)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		j.Stop()
@@ -81,7 +81,7 @@ func BenchmarkStopUnstartedJob(b *testing.B) {
 
 func BenchmarkStartStopJob(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		j := Create(42, sleepCmd)
+		j := CreateJob(42, jobSleepCmd)
 
 		if err := j.Cmd.Start(); err != nil {
 			b.Fatal(err)
