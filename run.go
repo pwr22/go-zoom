@@ -179,5 +179,7 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 		}
 	}
 
+	signal.Stop(stopEarlySignals)
+
 	return state.exitStatus
 }
