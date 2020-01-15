@@ -4,16 +4,14 @@ import (
 	"os/exec"
 	"testing"
 	"time"
-
-	"github.com/pwr22/zoom/job"
 )
 
 // TODO test output returned
 // Runs two jobs, one passes and one fails due to us stopping it
 func TestJobRunner(t *testing.T) {
 	// we'll run two commands, one will succeed and one will be stopped to simulate error
-	job1, job2 := job.Create(0, runSleepCmd+" 1"), job.Create(1, runSleepCmd+" 1")
-	jobsToRun, jobsCompleted, jobsErrored := make(chan *job.Job, 1), make(chan *job.Job, 1), make(chan *job.Job, 1)
+	job1, job2 := CreateJob(0, runSleepCmd+" 1"), CreateJob(1, runSleepCmd+" 1")
+	jobsToRun, jobsCompleted, jobsErrored := make(chan *Job, 1), make(chan *Job, 1), make(chan *Job, 1)
 
 	go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
 	go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
