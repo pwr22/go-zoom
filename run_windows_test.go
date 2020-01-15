@@ -1,3 +1,3 @@
-package run
+package main
 
 const sleepCmd = "timeout"

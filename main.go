@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/pwr22/zoom/run"
 )
 
 const version = "v0.1.2"
@@ -22,5 +20,5 @@ func main() {
 		os.Exit(2)
 	}
 
-	os.Exit(run.Cmds(cmds, *parallelism, *keepOrder))
+	os.Exit(Cmds(cmds, *parallelism, *keepOrder))
 }

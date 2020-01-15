@@ -1,6 +1,6 @@
 // +build !windows
 
-package run
+package main
 
 import (
 	"syscall"
