@@ -62,3 +62,35 @@ func TestStopStarted(t *testing.T) {
 		t.Fatal("command did not stop")
 	}
 }
+
+// benchmarking
+
+func BenchmarkCreate(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		CreateJob(42, jobSleepCmd)
+	}
+}
+
+func BenchmarkStopUnstartedJob(b *testing.B) {
+	j := CreateJob(42, jobSleepCmd)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		j.Stop()
+	}
+}
+
+func BenchmarkStartStopJob(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		j := CreateJob(42, jobSleepCmd)
+
+		if err := j.Cmd.Start(); err != nil {
+			b.Fatal(err)
+		}
+
+		j.Stop()
+
+		if err := j.Cmd.Wait(); err == nil {
+			b.Fatalf("expected an error")
+		}
+	}
+}

@@ -23,3 +23,16 @@ func TestKeyboardInterruptCmds(t *testing.T) {
 		t.Fatalf("zero exit")
 	}
 }
+
+func benchmarkCmdsEcho(n int, b *testing.B) {
+	// build a list of commands
+	cmds := make([]string, n)
+	for i := range cmds {
+		cmds[i] = "echo foo > /dev/null"
+	}
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		Cmds(cmds, 0, false)
+	}
+}
