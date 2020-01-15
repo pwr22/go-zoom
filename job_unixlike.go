@@ -1,6 +1,6 @@
 // +build !windows
 
-package job
+package main
 
 import (
 	"os"

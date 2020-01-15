@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-const sleepCmd = "sleep"
+const runSleepCmd = "sleep"
 
-var sleepCmds = []string{"sleep 1", "sleep 1"}
+var runSleepCmds = []string{"sleep 1", "sleep 1"}
 
 // unix only as windows doesn't have Kill
 // TODO use a sigbreak on windows (it may not propagate)
@@ -19,7 +19,7 @@ func TestKeyboardInterruptCmds(t *testing.T) {
 		syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	})
 
-	if exitStatus := Cmds(sleepCmds, 0, false); exitStatus == 0 {
+	if exitStatus := Cmds(runSleepCmds, 0, false); exitStatus == 0 {
 		t.Fatalf("zero exit")
 	}
 }

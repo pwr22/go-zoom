@@ -1,15 +1,15 @@
 // +build !windows
 
-package job
+package main
 
 import (
 	"testing"
 )
 
-const sleepCmd = "sleep 1"
+const jobSleepCmd = "sleep 1"
 
 func testCreateSpecificOS(t *testing.T, job *Job) {
-	if len(job.Cmd.Args) != 3 || job.Cmd.Args[0] != shell || job.Cmd.Args[1] != "-c" || job.Cmd.Args[2] != sleepCmd {
+	if len(job.Cmd.Args) != 3 || job.Cmd.Args[0] != shell || job.Cmd.Args[1] != "-c" || job.Cmd.Args[2] != jobSleepCmd {
 		t.Fatal("The command to run is not set")
 	}
 

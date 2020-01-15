@@ -1,3 +1,3 @@
 package main
 
-const sleepCmd = "timeout"
+const runSleepCmd = "timeout"

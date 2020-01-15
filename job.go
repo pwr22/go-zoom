@@ -1,4 +1,4 @@
-package job
+package main
 
 import (
 	"os/exec"
@@ -8,6 +8,6 @@ import (
 type Job struct {
 	Cmd *exec.Cmd
 	Out string // combined stdout / stderr
-	Err error  // any error that occured while running
+	Err error  // any error that occurred while running
 	Num int    // the number of the command in the overall batch
 }
