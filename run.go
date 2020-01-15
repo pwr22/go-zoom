@@ -6,12 +6,10 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
-
-	"github.com/pwr22/zoom/job"
 )
 
 // jobRunner is a routine to run jobs from a channel until it closes
-func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
+func jobRunner(jobsIn, jobsFinished, jobsErrored chan *Job) {
 	for job := range jobsIn {
 		out, err := job.Cmd.CombinedOutput()
 		job.Out, job.Err = string(out), err
@@ -25,15 +23,15 @@ func jobRunner(jobsIn, jobsFinished, jobsErrored chan *job.Job) {
 
 type runState struct {
 	cmdStrs                                                              []string
-	jobsToRun, jobsCompleted, jobsErrored                                chan *job.Job
-	jobs                                                                 []*job.Job
+	jobsToRun, jobsCompleted, jobsErrored                                chan *Job
+	jobs                                                                 []*Job
 	numOfRunners, doneCount, exitStatus, nextJobToRunIdx, totalCmdsCount int
 	lastJobPrinted                                                       int // used with keepOrder to track how many we've printed
 	stoppingEarly, keepOrder                                             bool
-	jobsToPrint                                                          []*job.Job // put jobs in here when finished ready to print
+	jobsToPrint                                                          []*Job // put jobs in here when finished ready to print
 }
 
-func printJobs(finishedJob *job.Job, state *runState) {
+func printJobs(finishedJob *Job, state *runState) {
 	if state.keepOrder {
 		state.jobsToPrint[finishedJob.Num] = finishedJob
 
@@ -51,12 +49,12 @@ func printJobs(finishedJob *job.Job, state *runState) {
 	}
 }
 
-func (state *runState) handleFinishedJob(finishedJob *job.Job) {
+func (state *runState) handleFinishedJob(finishedJob *Job) {
 	printJobs(finishedJob, state)
 	state.jobs[finishedJob.Num] = nil
 
 	if !state.stoppingEarly && state.nextJobToRunIdx < state.totalCmdsCount { // start any remaining jobs if things are still going smoothly
-		nextJob := job.Create(state.nextJobToRunIdx, state.cmdStrs[state.nextJobToRunIdx])
+		nextJob := CreateJob(state.nextJobToRunIdx, state.cmdStrs[state.nextJobToRunIdx])
 		state.jobs[state.nextJobToRunIdx] = nextJob
 		state.jobsToRun <- nextJob
 		state.nextJobToRunIdx++
@@ -70,7 +68,7 @@ func (state *runState) handleFinishedJob(finishedJob *job.Job) {
 	state.doneCount++
 }
 
-func (state *runState) handleErroredJob(erroredJob *job.Job) {
+func (state *runState) handleErroredJob(erroredJob *Job) {
 	printJobs(erroredJob, state)
 
 	if !state.stoppingEarly { // kill other processes after first error - then ignore the cascade - we only care about the first error
@@ -130,17 +128,17 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 	}
 
 	// start runners
-	jobsToRun := make(chan *job.Job, len(cmdStrs)) // enough to buffer all commands
-	jobsCompleted := make(chan *job.Job, len(cmdStrs))
-	jobsErrored := make(chan *job.Job, len(cmdStrs))
+	jobsToRun := make(chan *Job, len(cmdStrs)) // enough to buffer all commands
+	jobsCompleted := make(chan *Job, len(cmdStrs))
+	jobsErrored := make(chan *Job, len(cmdStrs))
 	for n := 1; n <= numOfRunners; n++ {
 		go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
 	}
 
 	// send out initial jobs
-	jobs := make([]*job.Job, len(cmdStrs))
+	jobs := make([]*Job, len(cmdStrs))
 	for idx := 0; idx < numOfRunners; idx++ {
-		job := job.Create(idx, cmdStrs[idx])
+		job := CreateJob(idx, cmdStrs[idx])
 		jobs[idx] = job
 		jobsToRun <- job
 	}
@@ -164,7 +162,7 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 		nextJobToRunIdx: numOfRunners,
 		lastJobPrinted:  -1,
 		keepOrder:       keepOrder,
-		jobsToPrint:     make([]*job.Job, len(cmdStrs)),
+		jobsToPrint:     make([]*Job, len(cmdStrs)),
 	}
 
 	// receiving loop - waiting for jobs to come back from the runners

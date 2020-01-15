@@ -10,7 +10,7 @@ import (
 var shell = os.Getenv("COMSPEC")
 
 // Create a job to run a command
-func Create(num int, cmdStr string) *Job {
+func CreateJob(num int, cmdStr string) *Job {
 	cmd := exec.Command(shell)
 	cmd.SysProcAttr = &syscall.SysProcAttr{ // assume the shell takes commands like so
 		CmdLine:       fmt.Sprintf(`/C "%s"`, cmdStr),   // got to do weird things for the quoting to work right
