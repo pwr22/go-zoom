@@ -1,16 +1,16 @@
 # Usage Manual
 
-    cat args.txt | zoom [options] [command] 
-    zoom [options] [command] [::: arg1 arg2 arg3 ...] [:::: argfile1.txt argfile2.txt ...] ...
+    cat args.txt | go-zoom [options] [command] 
+    go-zoom [options] [command] [::: arg1 arg2 arg3 ...] [:::: argfile1.txt argfile2.txt ...] ...
 
-zoom has two ways of taking arguments
+go-zoom has two ways of taking arguments:
 
-- Standard input
-- Inline on the command line and / or from files (standard input as well if you give `-` as the name of a file)
+- Standard input.
+- Inline on the command line and / or from files (standard input as well if you give `-` as the name of a file).
 
-In either mode the command can contain a placeholder `{}` and any instances of this are replaced with arguments. If there's no placeholder then arguments are appended to the end of the command. If there isn't a command then each argument is a command
+In either mode the command can contain a placeholder `{}` and any instances of this are replaced with arguments. If there's no placeholder then arguments are appended to the end of the command. If there isn't a command then each argument is itself a command.
 
-For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you can use things like `&&`, `||` and other goodness. Watch out to quote them properly if passing them on the commandline but you shouldn't need to worry if loading them from a file 
+For each command zoom will invoke a `$SHELL` on *NIX or `%COMSPEC%` on Windows so you can use things like `&&`, `||` and other shellisms. Watch out to quote them properly if passing them on the commandline but you shouldn't need to worry if loading them from a file.
 
 ## Simple Examples
 
@@ -21,7 +21,7 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
     8.8.8.8
     8.8.4.4
 
-    $ cat args.txt | zoom ping -c1
+    $ cat args.txt | go-zoom ping -c1
 
 ### Commands from standard input
 
@@ -30,15 +30,15 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
     ping -c1 8.8.8.8
     ping -c1 8.8.4.4
 
-    $ cat commands.txt | zoom
+    $ cat commands.txt | go-zoom
 
 ### Commands on the command line
 
-    $ zoom ::: "ping -c1 8.8.8.8" "ping -c1 8.8.4.4"
+    $ go-zoom ::: "ping -c1 8.8.8.8" "ping -c1 8.8.4.4"
 
 ### Using a placeholder
 
-    $ zoom ping {} -c1 ::: 8.8.8.8 8.8.4.4
+    $ go-zoom ping {} -c1 ::: 8.8.8.8 8.8.4.4
 
 ### Arguments from a file
 
@@ -47,7 +47,7 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
     8.8.8.8
     8.8.4.4
 
-    $ zoom ping -c1 {} :::: args.txt
+    $ go-zoom ping -c1 {} :::: args.txt
 
 ## Examples with multiple argument sources
 
@@ -55,7 +55,7 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
 
 ### Arguments from the command line
 
-    $ zoom echo ::: a b c ::: 1 2 3
+    $ go-zoom echo ::: a b c ::: 1 2 3
 
     a 3
     a 2
@@ -81,7 +81,7 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
     2
     3
 
-    $ zoom echo :::: letters.txt numbers.txt
+    $ go-zoom echo :::: letters.txt numbers.txt
 
     a 2
     a 3
@@ -101,7 +101,7 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
     2
     3
 
-    $ zoom echo ::: a b c :::: numbers.txt
+    $ go-zoom echo ::: a b c :::: numbers.txt
 
     a 3
     a 1
@@ -117,7 +117,7 @@ For each command zoom will invoke a `$SHELL`, or `%COMSPEC%` on Windows, so you 
 
 The arguments given after `:::` are all taken as a single set to permute but `::::` gives each file a set of its own. That means these all permute
 
-    $ zoom echo ::: a b c ::: 1 2 3
+    $ go-zoom echo ::: a b c ::: 1 2 3
 
     a 2
     a 3
@@ -141,7 +141,7 @@ The arguments given after `:::` are all taken as a single set to permute but `::
     2
     3
 
-    $ zoom echo :::: letters.txt numbers.txt
+    $ go-zoom echo :::: letters.txt numbers.txt
 
     a 1
     a 3
@@ -153,7 +153,7 @@ The arguments given after `:::` are all taken as a single set to permute but `::
     c 2
     c 3
 
-    $ zoom echo :::: letters.txt :::: numbers.txt
+    $ go-zoom echo :::: letters.txt :::: numbers.txt
 
     a 1
     a 2
@@ -167,7 +167,7 @@ The arguments given after `:::` are all taken as a single set to permute but `::
 
 But this does not permute
 
-    $ zoom echo ::: a b c 1 2 3
+    $ go-zoom echo ::: a b c 1 2 3
 
     a
     b
@@ -199,4 +199,4 @@ This behaviour is how [GNU Parallel](https://www.gnu.org/software/parallel/) beh
     2
     3
 
-I find this to be more consistent across `:::` and `::::` so the zoom semantics may change before v1.0.0 to match this. If so I'll likely provide a flag for parallel compatibility
+I find this to be more consistent across `:::` and `::::` so the go-zoom semantics may change before v1.0.0 to match this. If so I'll likely provide a flag for parallel compatibility
