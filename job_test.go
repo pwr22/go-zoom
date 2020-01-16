@@ -6,7 +6,7 @@ import (
 )
 
 func TestCreateJob(t *testing.T) {
-	job := CreateJob(42, jobSleepCmd)
+	job := createJob(42, jobSleepCmd)
 
 	if job.Err != nil {
 		t.Fatal("err is not set to nil")
@@ -36,23 +36,23 @@ func TestCreateJob(t *testing.T) {
 }
 
 func TestStopNil(t *testing.T) {
-	var j Job
-	j.Stop()
+	var j job
+	j.stop()
 }
 
 func TestStopUnstarted(t *testing.T) {
-	CreateJob(42, jobSleepCmd).Stop()
+	createJob(42, jobSleepCmd).stop()
 }
 
 func TestStopStarted(t *testing.T) {
-	job := CreateJob(42, jobSleepCmd)
+	job := createJob(42, jobSleepCmd)
 
 	start := time.Now()
 	if err := job.Cmd.Start(); err != nil {
 		t.Fatal("could not start job")
 	}
 
-	job.Stop()
+	job.stop()
 	err := job.Cmd.Wait()
 	duration := time.Since(start)
 
@@ -67,27 +67,27 @@ func TestStopStarted(t *testing.T) {
 
 func BenchmarkCreate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		CreateJob(42, jobSleepCmd)
+		createJob(42, jobSleepCmd)
 	}
 }
 
 func BenchmarkStopUnstartedJob(b *testing.B) {
-	j := CreateJob(42, jobSleepCmd)
+	j := createJob(42, jobSleepCmd)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		j.Stop()
+		j.stop()
 	}
 }
 
 func BenchmarkStartStopJob(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		j := CreateJob(42, jobSleepCmd)
+		j := createJob(42, jobSleepCmd)
 
 		if err := j.Cmd.Start(); err != nil {
 			b.Fatal(err)
 		}
 
-		j.Stop()
+		j.stop()
 
 		if err := j.Cmd.Wait(); err == nil {
 			b.Fatalf("expected an error")

@@ -8,12 +8,12 @@ import (
 
 const jobSleepCmd = "sleep 1"
 
-func testCreateSpecificOS(t *testing.T, job *Job) {
-	if len(job.Cmd.Args) != 3 || job.Cmd.Args[0] != shell || job.Cmd.Args[1] != "-c" || job.Cmd.Args[2] != jobSleepCmd {
+func testCreateSpecificOS(t *testing.T, j *job) {
+	if len(j.Cmd.Args) != 3 || j.Cmd.Args[0] != shell || j.Cmd.Args[1] != "-c" || j.Cmd.Args[2] != jobSleepCmd {
 		t.Fatal("The command to run is not set")
 	}
 
-	if job.Cmd.SysProcAttr.Setpgid != true {
+	if j.Cmd.SysProcAttr.Setpgid != true {
 		t.Fatal("processes are not started in a new group")
 	}
 }
