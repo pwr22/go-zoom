@@ -1,12 +1,12 @@
 # go-zoom
 
-[![Build Status](https://travis-ci.com/pwr22/zoom.svg?branch=master)](https://travis-ci.com/pwr22/zoom)
-[![Build status](https://ci.appveyor.com/api/projects/status/cuptxx2040f6f9sa/branch/master?svg=true)](https://ci.appveyor.com/project/pwr22/zoom/branch/master)
-[![codecov](https://codecov.io/gh/pwr22/zoom/branch/master/graph/badge.svg)](https://codecov.io/gh/pwr22/zoom)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pwr22/zoom)](https://goreportcard.com/report/github.com/pwr22/zoom)
-[![Downloads](https://img.shields.io/github/downloads/pwr22/zoom/total.svg)](https://github.com/pwr22/zoom/releases)
-[![](https://tokei.rs/b1/github/pwr22/zoom)](https://github.com/pwr22/zoom).
-[![AUR version](https://img.shields.io/aur/version/zoom-parallel.svg)](https://aur.archlinux.org/packages/zoom-parallel/)
+[![Build Status](https://travis-ci.com/pwr22/go-zoom.svg?branch=master)](https://travis-ci.com/pwr22/go-zoom)
+[![Build status](https://ci.appveyor.com/api/projects/status/cuptxx2040f6f9sa/branch/master?svg=true)](https://ci.appveyor.com/project/pwr22/go-zoom/branch/master)
+[![codecov](https://codecov.io/gh/pwr22/go-zoom/branch/master/graph/badge.svg)](https://codecov.io/gh/pwr22/go-zoom)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pwr22/go-zoom)](https://goreportcard.com/report/github.com/pwr22/go-zoom)
+[![Downloads](https://img.shields.io/github/downloads/pwr22/go-zoom/total.svg)](https://github.com/pwr22/go-zoom/releases)
+[![](https://tokei.rs/b1/github/pwr22/go-zoom)](https://github.com/pwr22/go-zoom).
+[![AUR version](https://img.shields.io/aur/version/go-zoom.svg)](https://aur.archlinux.org/packages/go-zoom/)
 
 Parallel command executor focussed on simplicity and good cross-platform behaviour.
 

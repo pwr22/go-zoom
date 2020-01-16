@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const version = "v0.1.2"
+const version = "v0.1.3"
 
 func main() {
 	if exitEarly, err := parseArgs(); err != nil {
