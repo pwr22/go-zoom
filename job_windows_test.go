@@ -8,7 +8,7 @@ import (
 
 const jobSleepCmd = "timeout 1"
 
-func testCreateSpecificOS(t *testing.T, j *Job) {
+func testCreateSpecificOS(t *testing.T, j *job) {
 	if j.Cmd.SysProcAttr.CreationFlags != syscall.CREATE_NEW_PROCESS_GROUP {
 		t.Fatal("processes are not started in a new group")
 	}

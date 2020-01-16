@@ -20,5 +20,5 @@ func main() {
 		os.Exit(2)
 	}
 
-	os.Exit(Cmds(cmds, *parallelism, *keepOrder))
+	os.Exit(runCmds(cmds, *parallelism, *keepOrder))
 }

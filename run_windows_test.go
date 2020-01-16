@@ -4,7 +4,7 @@ import "testing"
 
 const runSleepCmd = "timeout"
 
-func benchmarkCmdsEcho(n int, b *testing.B) {
+func benchmarkRunCmdsEcho(n int, b *testing.B) {
 	// build a list of commands
 	cmds := make([]string, n)
 	for i := range cmds {
@@ -12,6 +12,6 @@ func benchmarkCmdsEcho(n int, b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		Cmds(cmds, 0, false)
+		runCmds(cmds, 0, false)
 	}
 }

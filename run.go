@@ -28,7 +28,7 @@ type runState struct {
 	numOfRunners, doneCount, exitStatus, nextJobToRunIdx, totalCmdsCount int
 	lastJobPrinted                                                       int // used with keepOrder to track how many we've printed
 	stoppingEarly, keepOrder                                             bool
-	jobsToPrint                                                          []*job // put jobs in here when finished ready to print
+	jobsToPrint                                                          map[int]*job // put jobs in here when finished ready to print
 }
 
 func printJobs(finishedJob *job, state *runState) {
@@ -38,8 +38,9 @@ func printJobs(finishedJob *job, state *runState) {
 		// if we've just finished the next job to print
 		if state.lastJobPrinted == finishedJob.Num-1 {
 			// print jobs till we hit the end or are waiting on a job
-			for idx := finishedJob.Num; idx < len(state.jobsToPrint) && state.jobsToPrint[idx] != nil; idx++ {
+			for idx := finishedJob.Num; idx < state.totalCmdsCount && state.jobsToPrint[idx] != nil; idx++ {
 				fmt.Print(state.jobsToPrint[idx].Out)
+				delete(state.jobsToPrint, idx)
 				state.jobsToPrint[idx] = nil
 				state.lastJobPrinted = idx
 			}
@@ -54,7 +55,7 @@ func (state *runState) handleFinishedJob(finishedJob *job) {
 	state.jobs[finishedJob.Num] = nil
 
 	if !state.stoppingEarly && state.nextJobToRunIdx < state.totalCmdsCount { // start any remaining jobs if things are still going smoothly
-		nextJob := CreateJob(state.nextJobToRunIdx, state.cmdStrs[state.nextJobToRunIdx])
+		nextJob := createJob(state.nextJobToRunIdx, state.cmdStrs[state.nextJobToRunIdx])
 		state.jobs[state.nextJobToRunIdx] = nextJob
 		state.jobsToRun <- nextJob
 		state.nextJobToRunIdx++
@@ -84,7 +85,7 @@ func (state *runState) handleErroredJob(erroredJob *job) {
 		// stop all the running jobs
 		for _, j := range state.jobs {
 			if j != nil {
-				j.Stop()
+				j.stop()
 			}
 		}
 
@@ -107,7 +108,7 @@ func (state *runState) handleStopEarlySignal() {
 		// stop all the running jobs
 		for _, j := range state.jobs {
 			if j != nil {
-				j.Stop()
+				j.stop()
 			}
 		}
 
@@ -119,8 +120,8 @@ func (state *runState) handleStopEarlySignal() {
 	}
 }
 
-// Cmds executes the commands its given in parallel
-func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
+// runCmds executes the commands its given in parallel
+func runCmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 	if numOfRunners == 0 { // means run everything at once
 		numOfRunners = len(cmdStrs)
 	} else if numOfRunners > len(cmdStrs) { // or if there are more runners than commands then drop the excess
@@ -138,7 +139,7 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 	// send out initial jobs
 	jobs := make([]*job, len(cmdStrs))
 	for idx := 0; idx < numOfRunners; idx++ {
-		job := CreateJob(idx, cmdStrs[idx])
+		job := createJob(idx, cmdStrs[idx])
 		jobs[idx] = job
 		jobsToRun <- job
 	}
@@ -162,7 +163,7 @@ func Cmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int) {
 		nextJobToRunIdx: numOfRunners,
 		lastJobPrinted:  -1,
 		keepOrder:       keepOrder,
-		jobsToPrint:     make([]*job, len(cmdStrs)),
+		jobsToPrint:     make(map[int]*job),
 	}
 
 	// receiving loop - waiting for jobs to come back from the runners

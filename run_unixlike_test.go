@@ -19,12 +19,12 @@ func TestKeyboardInterruptCmds(t *testing.T) {
 		syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	})
 
-	if exitStatus := Cmds(runSleepCmds, 0, false); exitStatus == 0 {
+	if exitStatus := runCmds(runSleepCmds, 0, false); exitStatus == 0 {
 		t.Fatalf("zero exit")
 	}
 }
 
-func benchmarkCmdsEcho(n int, b *testing.B) {
+func benchmarkRunCmdsEcho(n int, b *testing.B) {
 	// build a list of commands
 	cmds := make([]string, n)
 	for i := range cmds {
@@ -33,6 +33,6 @@ func benchmarkCmdsEcho(n int, b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		Cmds(cmds, 0, false)
+		runCmds(cmds, 0, false)
 	}
 }

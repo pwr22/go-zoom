@@ -10,17 +10,17 @@ import (
 var shell = os.Getenv("COMSPEC")
 
 // Create a job to run a command
-func CreateJob(num int, cmdStr string) *Job {
+func createJob(num int, cmdStr string) *job {
 	cmd := exec.Command(shell)
 	cmd.SysProcAttr = &syscall.SysProcAttr{ // assume the shell takes commands like so
 		CmdLine:       fmt.Sprintf(`/C "%s"`, cmdStr),   // got to do weird things for the quoting to work right
 		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP, // signals go to the whole group so we gotta make a new one
 	}
-	return &Job{Num: num, Cmd: cmd}
+	return &job{Num: num, Cmd: cmd}
 }
 
 // stop a running job - no op if not running yet or already dead
-func (j *Job) Stop() {
+func (j *job) stop() {
 	if j != nil && j.Cmd != nil && j.Cmd.Process != nil { // we can only do this if a process exists
 		sendCtrlBreak(j.Cmd.Process.Pid) // this goes to the whole process group and can only be sent within the same console
 	}

@@ -10,7 +10,7 @@ import (
 // Runs two jobs, one passes and one fails due to us stopping it
 func TestJobRunner(t *testing.T) {
 	// we'll run two commands, one will succeed and one will be stopped to simulate error
-	job1, job2 := CreateJob(0, runSleepCmd+" 1"), CreateJob(1, runSleepCmd+" 1")
+	job1, job2 := createJob(0, runSleepCmd+" 1"), createJob(1, runSleepCmd+" 1")
 	jobsToRun, jobsCompleted, jobsErrored := make(chan *job, 1), make(chan *job, 1), make(chan *job, 1)
 
 	go runJobs(jobsToRun, jobsCompleted, jobsErrored)
@@ -21,7 +21,7 @@ func TestJobRunner(t *testing.T) {
 	close(jobsToRun)
 
 	<-time.After(100 * time.Millisecond) // wait for command to start before we stop it
-	job2.Stop()                          // this one should error
+	job2.stop()                          // this one should error
 
 	jobsDone := 0
 	for jobsDone < 2 {
@@ -53,27 +53,27 @@ var workingCmds = []string{"echo foo", "echo bar"}
 
 // TODO test output
 func TestCmdsImplicitParallelism(t *testing.T) {
-	if exitStatus := Cmds(workingCmds, 0, false); exitStatus != 0 {
+	if exitStatus := runCmds(workingCmds, 0, false); exitStatus != 0 {
 		t.Fatalf("non-zero exit %d", exitStatus)
 	}
 }
 
 // TODO test output
 func TestCmdsExplicitParallelism(t *testing.T) {
-	if exitStatus := Cmds(workingCmds, 1, false); exitStatus != 0 {
+	if exitStatus := runCmds(workingCmds, 1, false); exitStatus != 0 {
 		t.Fatalf("non-zero exit %d", exitStatus)
 	}
 }
 
 // TODO test output
 func TestCmdsParallelismHigherThanJobCount(t *testing.T) {
-	if exitStatus := Cmds(workingCmds, 100, false); exitStatus != 0 {
+	if exitStatus := runCmds(workingCmds, 100, false); exitStatus != 0 {
 		t.Fatalf("non-zero exit %d", exitStatus)
 	}
 }
 
 func TestCmdsKeepOrder(t *testing.T) {
-	if exitStatus := Cmds(workingCmds, 0, true); exitStatus != 0 {
+	if exitStatus := runCmds(workingCmds, 0, true); exitStatus != 0 {
 		t.Fatalf("non-zero exit %d", exitStatus)
 	}
 }
@@ -81,7 +81,7 @@ func TestCmdsKeepOrder(t *testing.T) {
 var oneCmdFails = []string{"echo foo", "non-existent-command"}
 
 func TestFailingCmds(t *testing.T) {
-	if exitStatus := Cmds(oneCmdFails, 2, false); exitStatus == 0 {
+	if exitStatus := runCmds(oneCmdFails, 2, false); exitStatus == 0 {
 		t.Fatalf("zero exit")
 	}
 }
@@ -89,13 +89,13 @@ func TestFailingCmds(t *testing.T) {
 // benchmarks
 
 func BenchmarkCmdsEcho1(b *testing.B) {
-	benchmarkCmdsEcho(1, b)
+	benchmarkRunCmdsEcho(1, b)
 }
 
 func BenchmarkCmdsEcho10(b *testing.B) {
-	benchmarkCmdsEcho(10, b)
+	benchmarkRunCmdsEcho(10, b)
 }
 
 func BenchmarkCmdsEcho100(b *testing.B) {
-	benchmarkCmdsEcho(100, b)
+	benchmarkRunCmdsEcho(100, b)
 }
