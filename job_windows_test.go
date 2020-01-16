@@ -8,12 +8,12 @@ import (
 
 const jobSleepCmd = "timeout 1"
 
-func testCreateSpecificOS(t *testing.T, job *Job) {
-	if job.Cmd.SysProcAttr.CreationFlags != syscall.CREATE_NEW_PROCESS_GROUP {
+func testCreateSpecificOS(t *testing.T, j *Job) {
+	if j.Cmd.SysProcAttr.CreationFlags != syscall.CREATE_NEW_PROCESS_GROUP {
 		t.Fatal("processes are not started in a new group")
 	}
 
-	if job.Cmd.SysProcAttr.CmdLine != fmt.Sprintf(`/C "%s"`, jobSleepCmd) {
+	if j.Cmd.SysProcAttr.CmdLine != fmt.Sprintf(`/C "%s"`, jobSleepCmd) {
 		t.Fatal("CmdLine is not set correctly")
 	}
 }

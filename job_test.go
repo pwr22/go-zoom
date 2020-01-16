@@ -36,7 +36,7 @@ func TestCreateJob(t *testing.T) {
 }
 
 func TestStopNil(t *testing.T) {
-	var j Job
+	var j job
 	j.Stop()
 }
 

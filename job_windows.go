@@ -20,9 +20,9 @@ func CreateJob(num int, cmdStr string) *Job {
 }
 
 // stop a running job - no op if not running yet or already dead
-func (job *Job) Stop() {
-	if job != nil && job.Cmd != nil && job.Cmd.Process != nil { // we can only do this if a process exists
-		sendCtrlBreak(job.Cmd.Process.Pid) // this goes to the whole process group and can only be sent within the same console
+func (j *Job) Stop() {
+	if j != nil && j.Cmd != nil && j.Cmd.Process != nil { // we can only do this if a process exists
+		sendCtrlBreak(j.Cmd.Process.Pid) // this goes to the whole process group and can only be sent within the same console
 	}
 }
 

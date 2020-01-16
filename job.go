@@ -4,8 +4,8 @@ import (
 	"os/exec"
 )
 
-// Job to run a command
-type Job struct {
+// job to run a command
+type job struct {
 	Cmd *exec.Cmd
 	Out string // combined stdout / stderr
 	Err error  // any error that occurred while running

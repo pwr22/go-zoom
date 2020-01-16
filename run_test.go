@@ -11,10 +11,10 @@ import (
 func TestJobRunner(t *testing.T) {
 	// we'll run two commands, one will succeed and one will be stopped to simulate error
 	job1, job2 := CreateJob(0, runSleepCmd+" 1"), CreateJob(1, runSleepCmd+" 1")
-	jobsToRun, jobsCompleted, jobsErrored := make(chan *Job, 1), make(chan *Job, 1), make(chan *Job, 1)
+	jobsToRun, jobsCompleted, jobsErrored := make(chan *job, 1), make(chan *job, 1), make(chan *job, 1)
 
-	go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
-	go jobRunner(jobsToRun, jobsCompleted, jobsErrored)
+	go runJobs(jobsToRun, jobsCompleted, jobsErrored)
+	go runJobs(jobsToRun, jobsCompleted, jobsErrored)
 
 	jobsToRun <- job2
 	jobsToRun <- job1
