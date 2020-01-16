@@ -24,7 +24,7 @@ func runJobs(jobsIn, jobsFinished, jobsErrored chan *job) {
 type runState struct {
 	cmdStrs                                                              []string
 	jobsToRun, jobsCompleted, jobsErrored                                chan *job
-	jobs                                                                 []*job
+	jobs                                                                 map[int]*job
 	numOfRunners, doneCount, exitStatus, nextJobToRunIdx, totalCmdsCount int
 	lastJobPrinted                                                       int // used with keepOrder to track how many we've printed
 	stoppingEarly, keepOrder                                             bool
@@ -52,7 +52,7 @@ func printJobs(finishedJob *job, state *runState) {
 
 func (state *runState) handleFinishedJob(finishedJob *job) {
 	printJobs(finishedJob, state)
-	state.jobs[finishedJob.Num] = nil
+	delete(state.jobs, finishedJob.Num)
 
 	if !state.stoppingEarly && state.nextJobToRunIdx < state.totalCmdsCount { // start any remaining jobs if things are still going smoothly
 		nextJob := createJob(state.nextJobToRunIdx, state.cmdStrs[state.nextJobToRunIdx])
@@ -137,7 +137,7 @@ func runCmds(cmdStrs []string, numOfRunners int, keepOrder bool) (exitStatus int
 	}
 
 	// send out initial jobs
-	jobs := make([]*job, len(cmdStrs))
+	jobs := make(map[int]*job)
 	for idx := 0; idx < numOfRunners; idx++ {
 		job := createJob(idx, cmdStrs[idx])
 		jobs[idx] = job
