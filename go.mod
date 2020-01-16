@@ -1,4 +1,4 @@
-module github.com/pwr22/zoom
+module github.com/pwr22/go-zoom
 
 go 1.13
 
